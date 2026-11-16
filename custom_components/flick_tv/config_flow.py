@@ -10,6 +10,7 @@ from homeassistant.helpers import selector
 from homeassistant.setup import async_setup_component
 
 from .const import DOMAIN
+from .profile_options import app_options
 from .protocol import InvalidPayload, parent_pin, profile, profile_patch, text
 from .session import DeviceRejected, DeviceUnavailable
 
@@ -169,7 +170,9 @@ class FlickOptionsFlow(OptionsFlow):
         }
         if "allowed_apps" in existing:
             form[schema.Optional("allowed_apps", default=existing["allowed_apps"])] = selector.SelectSelector(
-                selector.SelectSelectorConfig(options=self._apps, multiple=True, custom_value=False))
+                selector.SelectSelectorConfig(
+                    options=app_options(self._apps, existing["allowed_apps"]),
+                    multiple=True, custom_value=False))
         return self.async_show_form(step_id="profile", data_schema=schema.Schema(form), errors=errors)
 
     async def async_step_parent_pin(self, user_input=None):
