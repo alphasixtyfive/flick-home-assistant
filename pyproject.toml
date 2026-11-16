@@ -1,6 +1,6 @@
 [project]
 name = "flick-home-assistant"
-version = "0.1.1"
+version = "0.1.2"
 description = "Home Assistant integration for the Flick Android TV launcher"
 requires-python = ">=3.14"
 

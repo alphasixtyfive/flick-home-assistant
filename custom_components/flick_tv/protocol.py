@@ -204,11 +204,14 @@ def profile_patch(value: object, *, allow_pin: bool = False) -> dict:
     if "avatar" in data:
         result["avatar"] = None if data["avatar"] is None else image_url(data["avatar"])
     if "pin" in data:
-        pin = data["pin"]
-        if not isinstance(pin, str) or not re.fullmatch(r"[0-9]{4,12}", pin):
-            raise InvalidPayload("Use a four to twelve digit PIN")
-        result["pin"] = pin
+        result["pin"] = parent_pin(data["pin"])
     return result
+
+
+def parent_pin(value: object) -> str:
+    if not isinstance(value, str) or not re.fullmatch(r"[0-9]{4}", value):
+        raise InvalidPayload("Use exactly four digits for a PIN")
+    return value
 
 
 def command_data(command: str, value: object, *, allow_pin: bool = False) -> dict:

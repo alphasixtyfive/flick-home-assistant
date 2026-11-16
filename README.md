@@ -50,7 +50,7 @@ API; it opens no inbound network port. Pairing also binds a random device secret
 that user and the current socket. Never publish configuration entries, diagnostics
 containing household data, tokens or parent PINs.
 
-Parent PIN changes use a masked options form. They are not exposed as service arguments
+Parent PINs contain exactly four digits. Changes use a masked options form. They are not exposed as service arguments
 or entity attributes. Removing the integration disconnects the TV; ordinary light
 controls in Flick remain separate.
 

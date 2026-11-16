@@ -10,7 +10,7 @@ from homeassistant.helpers import selector
 from homeassistant.setup import async_setup_component
 
 from .const import DOMAIN
-from .protocol import InvalidPayload, profile, text
+from .protocol import InvalidPayload, parent_pin, profile, text
 from .session import DeviceRejected, DeviceUnavailable
 
 
@@ -146,14 +146,20 @@ class FlickOptionsFlow(OptionsFlow):
         if self._editing is None:
             return self.async_abort(reason="command_failed")
         if user_input is not None:
+            patch = {"id": self._editing["id"], **user_input}
             try:
-                patch = {"id": self._editing["id"], **user_input}
-                if not patch.get("pin"):
+                if patch.get("pin") in (None, ""):
                     patch.pop("pin", None)
-                await self._device().request("set_profile", patch, allow_pin=True)
-                return self.async_create_entry(title="", data={})
-            except (DeviceUnavailable, DeviceRejected, InvalidPayload):
-                errors["base"] = "command_failed"
+                else:
+                    patch["pin"] = parent_pin(patch["pin"])
+            except InvalidPayload:
+                errors["pin"] = "invalid_pin"
+            if not errors:
+                try:
+                    await self._device().request("set_profile", patch, allow_pin=True)
+                    return self.async_create_entry(title="", data={})
+                except (DeviceUnavailable, DeviceRejected, InvalidPayload):
+                    errors["base"] = "command_failed"
         existing = self._editing
         form = {
             schema.Required("name", default=existing["name"]): _text(),
@@ -169,10 +175,15 @@ class FlickOptionsFlow(OptionsFlow):
         errors = {}
         if user_input is not None:
             try:
-                await self._device().request("set_profile", {"id": user_input["profile_id"], "pin": user_input["pin"]}, allow_pin=True)
-                return self.async_create_entry(title="", data={})
-            except (DeviceUnavailable, DeviceRejected, InvalidPayload):
-                errors["base"] = "command_failed"
+                pin = parent_pin(user_input.get("pin"))
+            except InvalidPayload:
+                errors["pin"] = "invalid_pin"
+            if not errors:
+                try:
+                    await self._device().request("set_profile", {"id": user_input["profile_id"], "pin": pin}, allow_pin=True)
+                    return self.async_create_entry(title="", data={})
+                except (DeviceUnavailable, DeviceRejected, InvalidPayload):
+                    errors["base"] = "command_failed"
         try:
             await self._load_profiles()
         except (DeviceUnavailable, DeviceRejected, InvalidPayload):

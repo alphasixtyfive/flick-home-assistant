@@ -39,12 +39,12 @@
       "edit_profile": {"title": "Edit profile", "data": {"profile_id": "Profile"}},
       "profile": {
         "title": "Profile",
-        "description": "Enable Launcher management in Flick's TV integration settings first. Set a parent PIN for every adult before adding a child profile. A blank PIN keeps the existing one.",
+        "description": "Enable Launcher management in Flick's TV integration settings first. Set a four-digit parent PIN for every adult before adding a child profile. A blank PIN keeps the existing one.",
         "data": {"name": "Name", "child": "Child profile", "pin": "Parent PIN", "allowed_apps": "Allowed apps"}
       },
       "parent_pin": {
         "title": "Change parent PIN",
-        "description": "Use four to twelve digits. The PIN is sent to the paired TV and is not saved in Home Assistant's integration options.",
+        "description": "Use exactly four digits. The PIN is sent to the paired TV and is not saved in Home Assistant's integration options.",
         "data": {"profile_id": "Adult profile", "pin": "New parent PIN"}
       },
       "delete_profile": {
@@ -58,7 +58,7 @@
         "data": {"interval_seconds": "Change photo every (seconds)", "shuffle": "Shuffle", "dim_amount": "Dimming"}
       }
     },
-    "error": {"command_failed": "The change was not accepted. Check that the TV is connected and Launcher management is enabled. Adult profiles need a PIN when children are configured."},
+    "error": {"invalid_pin": "Enter exactly four digits.", "command_failed": "The change was not accepted. Check that the TV is connected and Launcher management is enabled. Adult profiles need a PIN when children are configured."},
     "abort": {
       "command_failed": "The TV could not be reached or Launcher management is off. Check Flick's TV integration settings.",
       "profile_limit": "This TV already has twelve profiles. Remove a profile before adding another."

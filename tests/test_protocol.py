@@ -42,6 +42,12 @@ class ProtocolTests(unittest.TestCase):
         with self.assertRaises(InvalidPayload):
             profile_patch({"id": "one", "allowed_apps": [f"app.test{i}" for i in range(101)]})
 
+    def test_parent_pin_is_exactly_four_digits_and_preserves_leading_zeroes(self):
+        self.assertEqual("0123", profile_patch({"id": "one", "pin": "0123"}, allow_pin=True)["pin"])
+        for pin in ("123", "12345", "12x4", "", 1234):
+            with self.assertRaises(InvalidPayload):
+                profile_patch({"id": "one", "pin": pin}, allow_pin=True)
+
     def test_notification_actions_are_small_named_choices_not_services(self):
         data = {"id": "notice", "message": "Someone is here", "actions": [{"id": "view", "label": "View"}]}
         self.assertEqual(8, notification(data)["timeout"])
