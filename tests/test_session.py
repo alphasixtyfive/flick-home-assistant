@@ -1,5 +1,7 @@
 import asyncio
 import unittest
+from types import SimpleNamespace
+from unittest.mock import patch
 
 from custom_components.flick_tv.protocol import InvalidPayload
 from custom_components.flick_tv.session import DeviceRejected, DeviceUnavailable, Registry
@@ -148,3 +150,33 @@ class SessionTests(unittest.IsolatedAsyncioTestCase):
         self.device.receive_result(new_id, True, {})
         await second
         self.assertEqual("view", self.device.notification_action("same-card", "view")["action_id"])
+
+    async def test_zero_timeout_actions_expire_like_the_default_notification(self):
+        clock = [100.0]
+        with patch("custom_components.flick_tv.session.time", SimpleNamespace(monotonic=lambda: clock[0])):
+            for timeout in (0, 8):
+                notification_id = f"notice-{timeout}"
+                task = asyncio.create_task(self.device.request("notify", {
+                    "id": notification_id, "message": "Hi", "timeout": timeout,
+                    "actions": [{"id": "view", "label": "View"}],
+                }))
+                await asyncio.sleep(0)
+                self.device.receive_result(self.events[-1]["request_id"], True, {})
+                await task
+            clock[0] = 138.0
+            for notification_id in ("notice-0", "notice-8"):
+                with self.assertRaises(InvalidPayload):
+                    self.device.notification_action(notification_id, "view")
+
+    async def test_persistent_actions_remain_available_after_the_default_timeout(self):
+        clock = [100.0]
+        with patch("custom_components.flick_tv.session.time", SimpleNamespace(monotonic=lambda: clock[0])):
+            task = asyncio.create_task(self.device.request("notify", {
+                "id": "persistent", "message": "Hi", "persistent": True, "timeout": 0,
+                "actions": [{"id": "view", "label": "View"}],
+            }))
+            await asyncio.sleep(0)
+            self.device.receive_result(self.events[-1]["request_id"], True, {})
+            await task
+            clock[0] = 138.0
+            self.assertEqual("view", self.device.notification_action("persistent", "view")["action_id"])

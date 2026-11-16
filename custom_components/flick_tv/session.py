@@ -145,7 +145,7 @@ class Device:
         self._notices.pop(data["id"], None)
         while len(self._notices) >= 64:
             self._notices.pop(next(iter(self._notices)))
-        lifetime = 86400 if data["persistent"] or data["timeout"] == 0 else data["timeout"] + 30
+        lifetime = 86400 if data["persistent"] else (data["timeout"] or 8) + 30
         notice = (now + lifetime, {action["id"] for action in data["actions"]})
         self._notices[data["id"]] = notice
         return notice
