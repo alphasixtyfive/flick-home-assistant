@@ -37,7 +37,7 @@ of an adult profile. A child profile's app list does not restrict content inside
 streaming app; configure child accounts there as well.
 
 For brief text notifications, use `notify.send_message` with the TV's notification
-entity. The `flick_tv.notify` action also accepts an image URL, up to two named actions,
+entity. The `flick_tv.notify` action also accepts an image URL or camera, up to two named actions,
 a timeout and a persistent flag. Persistent cards offer Dismiss and support Back.
 Images require direct HTTP(S) links without credentials. Notification buttons emit
 `flick_tv_notification_action` with the device, notification and action IDs; automations
@@ -45,6 +45,40 @@ decide what those IDs mean. The TV cannot choose an arbitrary Home Assistant ser
 
 Notifications over other apps require Android's Display over other apps permission.
 Android can hide overlays on protected content.
+
+## Test notifications
+
+Open the paired TV's device page and press **Test notification** under Diagnostic. It sends an
+eight-second text card without interrupting remote input. Enable notifications and Android's
+Display over other apps permission on the TV first; Launcher management can stay off.
+
+For ordinary text, use the TV's notification entity in Developer tools → Actions:
+
+```yaml
+action: notify.send_message
+target:
+  entity_id: notify.my_tv_notification
+data:
+  title: Flick
+  message: Notifications are working on this TV.
+```
+
+To include an existing Home Assistant camera image:
+
+```yaml
+action: flick_tv.notify
+data:
+  device_id: YOUR_FLICK_DEVICE_ID
+  title: Camera preview
+  message: Here is the latest camera image.
+  camera_entity_id: camera.my_camera
+  timeout: 15
+```
+
+Replace the example entity/device IDs with your TV and camera. Camera images use a short-lived
+Home Assistant link; the TV does not receive camera credentials. Use `image` for a direct HTTP(S)
+image URL instead of `camera_entity_id`, and do not specify both. The notification entity's native
+last-sent timestamp records calls through `notify.send_message`, not the separate rich action.
 
 ## Access and privacy
 

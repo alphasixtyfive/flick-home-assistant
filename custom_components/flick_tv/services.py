@@ -1,13 +1,16 @@
 """Validated management actions; no caller chooses an arbitrary device command."""
 
+from datetime import timedelta
+
 import probatio as schema
+from homeassistant.components.http.auth import async_sign_path
 from homeassistant.core import SupportsResponse, callback
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import device_registry as dr
 
 from .const import DOMAIN
 from .permissions import async_require_management
-from .protocol import InvalidPayload, identifier
+from .protocol import InvalidPayload, camera_entity_id, identifier
 from .session import DeviceRejected, DeviceUnavailable
 
 
@@ -54,6 +57,19 @@ def async_register_services(hass):
         if call.service == "notify":
             from uuid import uuid4
             data.setdefault("id", str(uuid4()))
+            camera = data.pop("camera_entity_id", None)
+            if camera is not None:
+                if "image" in data:
+                    raise ServiceValidationError("Choose an image URL or a camera, not both")
+                try:
+                    camera = camera_entity_id(camera)
+                except InvalidPayload as err:
+                    raise ServiceValidationError(str(err)) from err
+                if hass.states.get(camera) is None:
+                    raise ServiceValidationError("Choose an existing camera entity")
+                image = async_sign_path(hass, f"/api/camera_proxy/{camera}", timedelta(seconds=60), use_content_user=True)
+                # HA intentionally leaves these size hints outside the signature.
+                data["image"] = f"{image}&width=1280&height=720"
         result = await async_request(device, call.service, data)
         if call.service in ("get_status", "list_apps", "list_profiles"):
             return result
@@ -71,7 +87,8 @@ def async_register_services(hass):
                                   schema.Optional("dim_amount"): schema.Any(int, float)},
         "set_wallpapers": {schema.Required("photos"): list, schema.Optional("replace", default=True): bool},
         "notify": {schema.Required("message"): str, schema.Optional("id"): str, schema.Optional("title"): str,
-                   schema.Optional("image"): str, schema.Optional("actions"): list,
+                   schema.Optional("image"): str, schema.Optional("camera_entity_id"): str,
+                   schema.Optional("actions"): list,
                    schema.Optional("persistent", default=False): bool, schema.Optional("timeout", default=8): _whole_number},
     }
     for name, extra in definitions.items():

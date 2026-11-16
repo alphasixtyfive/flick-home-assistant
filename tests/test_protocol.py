@@ -64,6 +64,51 @@ class ProtocolTests(unittest.TestCase):
                 command_data("set_wallpapers", {"photos": [image]})
         self.assertEqual(["https://images.example.test/a.jpg"], command_data("set_wallpapers", {"photos": ["https://images.example.test/a.jpg"]})["photos"])
 
+    def test_signed_camera_image_paths_are_only_accepted_for_notifications(self):
+        image = "/api/camera_proxy/camera.front_door?authSig=header.payload.signature&width=1280&height=720"
+        self.assertEqual(image, notification({"id": "notice", "message": "Visitor", "image": image})["image"])
+        with self.assertRaises(InvalidPayload):
+            command_data("set_wallpapers", {"photos": [image]})
+        with self.assertRaises(InvalidPayload):
+            profile_patch({"id": "one", "avatar": image})
+        external = "https://images.example.test/photo.jpg"
+        self.assertEqual(external, notification({"id": "notice", "message": "Hi", "image": external})["image"])
+
+    def test_signed_camera_paths_reject_other_authorities_paths_and_credentials(self):
+        query = "?authSig=header.payload.signature&width=1280&height=720"
+        invalid = (
+            "//other.test/api/camera_proxy/camera.front_door" + query,
+            "///api/camera_proxy/camera.front_door" + query,
+            "/api/camera_proxy/camera.front_door/../camera.other" + query,
+            "/api/camera_proxy/camera.front_door%2f..%2fother" + query,
+            "/api/camera_proxy/../config" + query,
+            "/api/camera_proxy/camera.front_door\\other" + query,
+            "/api/states" + query,
+            "/local/snapshot.jpg" + query,
+            "/api/camera_proxy/sensor.front_door" + query,
+            "/api/camera_proxy/camera.front_door" + query + "#fragment",
+            "/api/camera_proxy/camera.front_door?token=private&width=1280&height=720",
+        )
+        for image in invalid:
+            with self.subTest(image=image), self.assertRaises(InvalidPayload):
+                notification({"id": "notice", "message": "Hi", "image": image})
+
+    def test_signed_camera_queries_are_exact_bounded_and_cannot_duplicate_keys(self):
+        path = "/api/camera_proxy/camera.front_door?"
+        invalid = (
+            "authSig=header.payload.signature&width=1280&height=720&width=1280",
+            "authSig=header.payload.signature&width=1280&height=720&%77idth=1280",
+            "authSig=header.payload.signature&width=1280&height=720&token=private",
+            "authSig=header.payload.signature&width=4096&height=720",
+            "authSig=header.payload.signature&width=1280&height=4096",
+            "authSig=not_a_jwt&width=1280&height=720",
+            "authSig=&width=1280&height=720",
+            "authSig=header.payload.signature&width=1280",
+        )
+        for query in invalid:
+            with self.subTest(query=query), self.assertRaises(InvalidPayload):
+                notification({"id": "notice", "message": "Hi", "image": path + query})
+
     def test_byte_depth_and_nonfinite_limits_are_enforced(self):
         with self.assertRaises(InvalidPayload):
             bounded_object({"text": "x" * 524_288})

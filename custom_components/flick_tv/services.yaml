@@ -126,9 +126,16 @@ notify:
           multiline: true
     image:
       name: Image URL
+      description: Optional. Choose either an image URL or a camera.
       selector:
         text:
           type: url
+    camera_entity_id:
+      name: Camera
+      description: Show a private snapshot using a short-lived link. No image file is saved.
+      selector:
+        entity:
+          domain: camera
     actions:
       name: Actions
       description: Up to two objects, each with an id and label.

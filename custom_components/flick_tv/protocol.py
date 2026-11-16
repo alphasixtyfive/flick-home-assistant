@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import re
-from urllib.parse import urlsplit
+from urllib.parse import parse_qsl, urlsplit
 
 from .const import COMMANDS, MAX_PAYLOAD_BYTES, PROTOCOL
 
@@ -13,6 +13,8 @@ _SECRET = re.compile(r"[0-9a-f]{64}\Z")
 _CODE = re.compile(r"[0-9]{6}\Z")
 _PACKAGE = re.compile(r"[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)+\Z")
 _PROFILE_ID = re.compile(r"[A-Za-z0-9_-]{1,64}\Z")
+_CAMERA_ID = re.compile(r"camera\.[a-z0-9_]{1,128}\Z")
+_SIGNED_TOKEN = re.compile(r"[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\Z")
 
 
 class InvalidPayload(ValueError):
@@ -121,6 +123,35 @@ def image_url(value: object) -> str:
     return url
 
 
+def camera_entity_id(value: object) -> str:
+    if not isinstance(value, str) or not _CAMERA_ID.fullmatch(value):
+        raise InvalidPayload("Choose a camera entity")
+    return value
+
+
+def notification_image(value: object) -> str:
+    url = text(value, 4096)
+    if not url.startswith("/"):
+        return image_url(url)
+    prefix = "/api/camera_proxy/"
+    if not url.startswith(prefix) or "\\" in url or "#" in url or any(char.isspace() for char in url):
+        raise InvalidPayload("Invalid signed camera image")
+    try:
+        parsed = urlsplit(url)
+        query = parse_qsl(parsed.query, keep_blank_values=True, strict_parsing=True)
+    except ValueError as err:
+        raise InvalidPayload("Invalid signed camera image") from err
+    if parsed.scheme or parsed.netloc or not parsed.path.startswith(prefix):
+        raise InvalidPayload("Use a signed camera image path")
+    camera_entity_id(parsed.path[len(prefix):])
+    if len(query) != 3 or {key for key, _ in query} != {"authSig", "width", "height"}:
+        raise InvalidPayload("Invalid signed camera image parameters")
+    params = dict(query)
+    if params["width"] != "1280" or params["height"] != "720" or not _SIGNED_TOKEN.fullmatch(params["authSig"]):
+        raise InvalidPayload("Invalid signed camera image parameters")
+    return url
+
+
 def connection_data(value: object) -> dict:
     data = bounded_object(value)
     fields(data, {"device_id", "device_secret", "name", "protocol", "pairing_code"},
@@ -181,7 +212,7 @@ def notification(value: object) -> dict:
     if not result["title"].strip() and not result["message"].strip():
         raise InvalidPayload("Enter a notification title or message")
     if data.get("image"):
-        result["image"] = image_url(data["image"])
+        result["image"] = notification_image(data["image"])
     return result
 
 
