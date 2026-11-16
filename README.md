@@ -1,4 +1,8 @@
-# Flick TV for Home Assistant
+<p align="center">
+  <img src="docs/assets/flick.svg" width="112" height="112" alt="Flick icon">
+</p>
+
+<h1 align="center">Flick TV for Home Assistant</h1>
 
 Connect the [Flick Android TV launcher](https://github.com/alphasixtyfive/flick) to
 Home Assistant. Each paired TV appears as a device with profile selection, wallpaper
@@ -48,7 +52,7 @@ Management actions require a Home Assistant administrator or system
 automation context. The TV authenticates through the existing Home Assistant WebSocket
 API; it opens no inbound network port. Pairing also binds a random device secret to
 that user and the current socket. Never publish configuration entries, diagnostics
-containing household data, tokens or parent PINs.
+containing personal data, tokens or parent PINs.
 
 Parent PINs contain exactly four digits. Changes use a masked options form. They are not exposed as service arguments
 or entity attributes. Removing the integration disconnects the TV; ordinary light
@@ -66,3 +70,7 @@ These tests run independently of Home Assistant. Integration loading, configurat
 flows, entity behavior and Android permissions also need testing on the supported
 Home Assistant and TV versions. See the launcher's
 [protocol documentation](https://github.com/alphasixtyfive/flick/blob/main/docs/home-assistant-protocol.md).
+
+The square brand icon ships in `custom_components/flick_tv/brand/` at 256px and 512px.
+Both PNGs use the vector source in `docs/assets/flick.svg`. Home Assistant loads them through its
+[native branding support](https://contributors.home-assistant.io/core/integrations/brands/); no dashboard resource is needed.

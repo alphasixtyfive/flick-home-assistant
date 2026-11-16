@@ -10,7 +10,7 @@ from homeassistant.helpers import selector
 from homeassistant.setup import async_setup_component
 
 from .const import DOMAIN
-from .protocol import InvalidPayload, parent_pin, profile, text
+from .protocol import InvalidPayload, parent_pin, profile, profile_patch, text
 from .session import DeviceRejected, DeviceUnavailable
 
 
@@ -91,7 +91,7 @@ class FlickOptionsFlow(OptionsFlow):
     async def async_step_init(self, user_input=None):
         return self.async_show_menu(step_id="init", menu_options=["add_profile", "edit_profile", "parent_pin", "delete_profile", "wallpaper"])
 
-    async def _load_profiles(self):
+    async def _load_profiles(self, *, include_apps=False):
         data = await self._device().request("list_profiles")
         profiles = data.get("profiles", [])
         if not isinstance(profiles, list) or len(profiles) > 12:
@@ -102,9 +102,10 @@ class FlickOptionsFlow(OptionsFlow):
                 raise InvalidPayload("Invalid profile list")
             clean = profile({key: item.get(key) for key in ("id", "name", "child")})
             if "allowed_apps" in item:
-                from .protocol import profile_patch
                 clean["allowed_apps"] = profile_patch({"id": clean["id"], "allowed_apps": item["allowed_apps"]})["allowed_apps"]
             self._profiles.append(clean)
+        if not include_apps:
+            return
         apps = (await self._device().request("list_apps")).get("apps", [])
         if not isinstance(apps, list) or len(apps) > 512:
             raise InvalidPayload("Invalid app list")
@@ -123,7 +124,7 @@ class FlickOptionsFlow(OptionsFlow):
     async def async_step_add_profile(self, user_input=None):
         self._editing = {"id": str(uuid4()), "name": "", "child": True, "allowed_apps": []}
         try:
-            await self._load_profiles()
+            await self._load_profiles(include_apps=True)
         except (DeviceUnavailable, DeviceRejected, InvalidPayload):
             return self.async_abort(reason="command_failed")
         if len(self._profiles) >= 12:
@@ -136,7 +137,7 @@ class FlickOptionsFlow(OptionsFlow):
             if self._editing is not None:
                 return await self.async_step_profile()
         try:
-            await self._load_profiles()
+            await self._load_profiles(include_apps=True)
         except (DeviceUnavailable, DeviceRejected, InvalidPayload):
             return self.async_abort(reason="command_failed")
         return self.async_show_form(step_id="edit_profile", data_schema=schema.Schema({schema.Required("profile_id"): self._profile_selector()}))
