@@ -32,13 +32,15 @@ and wallpaper preferences. Online photo collections can be replaced or extended 
 `flick_tv.set_wallpapers`.
 
 Enable **Launcher management** on the TV before changing profiles or wallpapers.
-This gives Home Assistant administrators parent-level control, including selection
-of an adult profile. A child profile's app list does not restrict content inside a
+Management requests also require an unlocked adult profile on the TV. They are unavailable
+at the startup picker or while a child profile is active. A child's app list does not restrict content inside a
 streaming app; configure child accounts there as well.
 
 For brief text notifications, use `notify.send_message` with the TV's notification
 entity. The `flick_tv.notify` action also accepts an image URL or camera, up to two named actions,
-a timeout and a persistent flag. Persistent cards offer Dismiss and support Back.
+a timeout and a persistent flag. Action buttons require an unlocked adult profile;
+text and image notifications can still appear while the launcher is locked. Persistent
+cards offer Dismiss and support Back.
 Images require direct HTTP(S) links without credentials. Notification buttons emit
 `flick_tv_notification_action` with the device, notification and action IDs; automations
 decide what those IDs mean. The TV cannot choose an arbitrary Home Assistant service.
