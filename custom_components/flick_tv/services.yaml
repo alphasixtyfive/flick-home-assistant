@@ -1,0 +1,155 @@
+get_status:
+  name: Get status
+  description: Read the paired TV's current launcher status.
+  fields:
+    device_id: &tv
+      name: TV
+      required: true
+      selector:
+        device:
+          integration: flick_tv
+list_apps:
+  name: List apps
+  description: List installed TV apps. Enable Launcher management on the TV first.
+  fields:
+    device_id: *tv
+list_profiles:
+  name: List profiles
+  description: List profile names and app allowlists without parent PINs.
+  fields:
+    device_id: *tv
+next_wallpaper:
+  name: Next wallpaper
+  description: Advance the slideshow once. Enable Launcher management on the TV first.
+  fields:
+    device_id: *tv
+select_profile:
+  name: Select profile
+  description: Select a profile with parent-level management access.
+  fields:
+    device_id: *tv
+    profile_id:
+      name: Profile ID
+      required: true
+      selector:
+        text:
+set_profile:
+  name: Set profile
+  description: Add or update a profile. Use device options to set a parent PIN.
+  fields:
+    device_id: *tv
+    profile_id:
+      name: Profile ID
+      required: true
+      selector:
+        text:
+    name:
+      name: Name
+      selector:
+        text:
+    child:
+      name: Child profile
+      selector:
+        boolean:
+    allowed_apps:
+      name: Allowed app packages
+      selector:
+        object:
+    avatar:
+      name: Avatar URL
+      selector:
+        text:
+          type: url
+delete_profile:
+  name: Delete profile
+  description: Delete a profile while keeping at least one adult profile.
+  fields:
+    device_id: *tv
+    profile_id:
+      name: Profile ID
+      required: true
+      selector:
+        text:
+set_wallpaper_options:
+  name: Set wallpaper options
+  description: Change slideshow preferences without replacing the photo collection.
+  fields:
+    device_id: *tv
+    interval_seconds:
+      name: Change photo every (seconds)
+      selector:
+        number:
+          min: 30
+          max: 86400
+          mode: box
+    shuffle:
+      name: Shuffle
+      selector:
+        boolean:
+    dim_amount:
+      name: Dimming
+      selector:
+        number:
+          min: 0
+          max: 0.7
+          step: 0.01
+          mode: slider
+set_wallpapers:
+  name: Set wallpapers
+  description: Replace or extend the TV's online photo selection with up to 500 direct image URLs.
+  fields:
+    device_id: *tv
+    photos:
+      name: Photo URLs
+      required: true
+      selector:
+        object:
+    replace:
+      name: Replace current selection
+      default: true
+      selector:
+        boolean:
+notify:
+  name: Show notification
+  description: Show a text or image card. Persistent cards offer Dismiss; action buttons emit a Flick notification event.
+  fields:
+    device_id: *tv
+    title:
+      name: Title
+      selector:
+        text:
+    message:
+      name: Message
+      required: true
+      selector:
+        text:
+          multiline: true
+    image:
+      name: Image URL
+      selector:
+        text:
+          type: url
+    actions:
+      name: Actions
+      description: Up to two objects, each with an id and label.
+      selector:
+        object:
+    persistent:
+      name: Keep until dismissed
+      default: false
+      selector:
+        boolean:
+    timeout:
+      name: Timeout
+      default: 8
+      selector:
+        number:
+          min: 0
+          max: 120
+          mode: box
+          unit_of_measurement: seconds
+    id:
+      name: Notification ID
+      description: Optional. Reuse an ID to update an existing card.
+      selector:
+        text:

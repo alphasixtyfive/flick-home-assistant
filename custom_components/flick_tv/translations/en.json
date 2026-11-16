@@ -1,0 +1,67 @@
+{
+  "title": "Flick TV",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Pair a TV",
+        "description": "In Flick, open Settings → Home Assistant → TV integration → Pair TV. Enter the six-digit code shown on that TV.",
+        "data": {"pairing_code": "Pairing code"}
+      },
+      "confirm": {
+        "title": "Confirm this TV",
+        "description": "Pair **{name}** with Home Assistant? Choose a name such as Bedroom TV.\n\n{replacement}",
+        "data": {"name": "TV name"}
+      }
+    },
+    "error": {
+      "pairing_not_found": "No TV is waiting with that code. Check the code and keep Flick's pairing screen open.",
+      "invalid_name": "Enter a TV name with one to eighty characters."
+    },
+    "abort": {
+      "setup_failed": "Flick TV could not start. Check the Home Assistant log and try again.",
+      "pairing_expired": "The pairing code expired. Generate a new code on the TV.",
+      "reconfigured": "The TV's pairing has been updated."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Flick TV options",
+        "menu_options": {
+          "add_profile": "Add profile",
+          "edit_profile": "Edit profile",
+          "parent_pin": "Change parent PIN",
+          "delete_profile": "Delete profile",
+          "wallpaper": "Slideshow"
+        }
+      },
+      "add_profile": {"title": "Add profile"},
+      "edit_profile": {"title": "Edit profile", "data": {"profile_id": "Profile"}},
+      "profile": {
+        "title": "Profile",
+        "description": "Enable Launcher management in Flick's TV integration settings first. Set a parent PIN for every adult before adding a child profile. A blank PIN keeps the existing one.",
+        "data": {"name": "Name", "child": "Child profile", "pin": "Parent PIN", "allowed_apps": "Allowed apps"}
+      },
+      "parent_pin": {
+        "title": "Change parent PIN",
+        "description": "Use four to twelve digits. The PIN is sent to the paired TV and is not saved in Home Assistant's integration options.",
+        "data": {"profile_id": "Adult profile", "pin": "New parent PIN"}
+      },
+      "delete_profile": {
+        "title": "Delete profile",
+        "description": "Delete the selected profile from the TV. At least one adult profile must remain.",
+        "data": {"profile_id": "Profile to delete"}
+      },
+      "wallpaper": {
+        "title": "Slideshow",
+        "description": "Only the preferences entered here change. Choose photo folders and local pictures on the TV; use the Set wallpapers action for online collections.",
+        "data": {"interval_seconds": "Change photo every (seconds)", "shuffle": "Shuffle", "dim_amount": "Dimming"}
+      }
+    },
+    "error": {"command_failed": "The change was not accepted. Check that the TV is connected and Launcher management is enabled. Adult profiles need a PIN when children are configured."},
+    "abort": {
+      "command_failed": "The TV could not be reached or Launcher management is off. Check Flick's TV integration settings.",
+      "profile_limit": "This TV already has twelve profiles. Remove a profile before adding another."
+    }
+  }
+}
