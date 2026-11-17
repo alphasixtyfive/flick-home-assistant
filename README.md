@@ -32,6 +32,11 @@ to add or edit a profile, change a parent PIN, manage a child's allowed apps or 
 Online photo collections can be replaced or extended with
 `flick_tv.set_wallpapers`.
 
+On TVs that support themes, **Configure → Theme** lists the presets and imported themes
+currently available on that TV. Select a theme to apply it immediately. Import theme files
+under Flick's Appearance settings; Home Assistant does not edit theme files or store a
+second copy of the selection.
+
 Enable **Launcher management** on the TV before changing profiles or wallpapers.
 Management requests also require an unlocked adult profile on the TV. They are unavailable
 at the startup picker or while a child profile is active. A child's app list does not restrict content inside a

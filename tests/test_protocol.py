@@ -4,7 +4,7 @@ from unittest.mock import patch
 from custom_components.flick_tv.const import MAX_PAYLOAD_BYTES
 
 from custom_components.flick_tv.protocol import (
-    InvalidPayload, bounded_object, command_data, connection_data, notification, profile_patch, status,
+    InvalidPayload, bounded_object, command_data, connection_data, notification, profile_patch, status, themes,
 )
 
 
@@ -14,6 +14,40 @@ def valid_status():
 
 
 class ProtocolTests(unittest.TestCase):
+    def test_theme_commands_accept_only_identifiers_and_no_palette_data(self):
+        self.assertEqual({}, command_data("list_themes", {}))
+        self.assertEqual({"id": "custom_1234-5678"}, command_data("set_theme", {"id": "custom_1234-5678"}))
+        for command, data in (("list_themes", {"colors": {}}), ("set_theme", {}),
+                              ("set_theme", {"id": "../file"}),
+                              ("set_theme", {"id": "midnight", "colors": {}})):
+            with self.subTest(command=command, data=data), self.assertRaises(InvalidPayload):
+                command_data(command, data)
+
+    def test_theme_list_requires_unique_bounded_choices_and_current_selection(self):
+        choice = {"id": "midnight", "name": "Midnight"}
+        self.assertEqual([choice], themes({"selected": "midnight", "themes": [choice]})["themes"])
+        for data in ({"selected": "other", "themes": [choice]},
+                     {"selected": "midnight", "themes": [choice, choice]},
+                     {"selected": "midnight", "themes": [choice] * 12},
+                     {"selected": "midnight", "themes": [choice | {"colors": {}}]},
+                     {"selected": "midnight", "themes": [choice | {"name": "x" * 41}]}):
+            with self.subTest(data=data), self.assertRaises(InvalidPayload):
+                themes(data)
+
+    def test_imported_theme_uuid_identifiers_fit_the_management_protocol(self):
+        imported_id = "custom_01234567-89ab-4def-8123-456789abcdef"
+        self.assertEqual(43, len(imported_id))
+        choice = {"id": imported_id, "name": "Ocean"}
+        available = themes({"selected": imported_id, "themes": [choice]})
+        self.assertEqual(imported_id, available["selected"])
+        self.assertEqual({"id": imported_id}, command_data("set_theme", {"id": imported_id}))
+        with self.assertRaises(InvalidPayload):
+            command_data("set_theme", {"id": "x" * 65})
+
+    def test_theme_capability_needs_no_new_status_fields(self):
+        data = valid_status() | {"capabilities": ["profiles", "wallpapers", "themes"]}
+        self.assertIn("themes", status(data)["capabilities"])
+
     def test_profile_count_matches_the_launcher_limit(self):
         data = valid_status()
         data["profiles"] = [{"id": f"viewer-{i}", "name": "Viewer", "child": False} for i in range(13)]

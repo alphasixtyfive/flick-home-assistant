@@ -245,13 +245,31 @@ def parent_pin(value: object) -> str:
     return value
 
 
+def themes(value: object) -> dict:
+    data = bounded_object(value)
+    fields(data, {"selected", "themes"}, {"selected", "themes"})
+    choices = data["themes"]
+    if not isinstance(choices, list) or not 1 <= len(choices) <= 11:
+        raise InvalidPayload("Invalid theme list")
+    parsed = []
+    for choice in choices:
+        choice = bounded_object(choice)
+        fields(choice, {"id", "name"}, {"id", "name"})
+        parsed.append({"id": profile_id(choice["id"]), "name": text(choice["name"], 40)})
+    ids = [choice["id"] for choice in parsed]
+    selected = profile_id(data["selected"])
+    if len(set(ids)) != len(ids) or selected not in ids:
+        raise InvalidPayload("Inconsistent theme list")
+    return {"selected": selected, "themes": parsed}
+
+
 def command_data(command: str, value: object, *, allow_pin: bool = False) -> dict:
     if command not in COMMANDS:
         raise InvalidPayload("Unsupported command")
     data = bounded_object(value)
-    if command in {"get_status", "list_apps", "list_profiles", "next_wallpaper"}:
+    if command in {"get_status", "list_apps", "list_profiles", "list_themes", "next_wallpaper"}:
         fields(data, set())
-    elif command in {"select_profile", "delete_profile"}:
+    elif command in {"select_profile", "delete_profile", "set_theme"}:
         fields(data, {"id"}, {"id"})
         return {"id": profile_id(data["id"])}
     elif command == "set_profile":

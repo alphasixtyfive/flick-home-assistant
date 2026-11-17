@@ -11,7 +11,7 @@ from homeassistant.setup import async_setup_component
 
 from .const import DOMAIN
 from .profile_options import app_options
-from .protocol import InvalidPayload, parent_pin, profile, profile_patch, text
+from .protocol import InvalidPayload, parent_pin, profile, profile_patch, text, themes
 from .session import DeviceRejected, DeviceUnavailable
 
 
@@ -90,7 +90,43 @@ class FlickOptionsFlow(OptionsFlow):
         return device
 
     async def async_step_init(self, user_input=None):
-        return self.async_show_menu(step_id="init", menu_options=["wallpaper", "profiles"])
+        choices = ["wallpaper", "profiles"]
+        if self._supports_themes():
+            choices.insert(0, "theme")
+        return self.async_show_menu(step_id="init", menu_options=choices)
+
+    def _supports_themes(self):
+        entry = self.hass.config_entries.async_get_entry(self._entry_id)
+        device = getattr(entry, "runtime_data", None)
+        return device is not None and "themes" in device.status.get("capabilities", [])
+
+    async def async_step_theme(self, user_input=None):
+        if not self._supports_themes():
+            return self.async_abort(reason="theme_unavailable")
+        errors = {}
+        try:
+            device = self._device()
+            available = themes(await device.request("list_themes"))
+        except (DeviceUnavailable, DeviceRejected, InvalidPayload):
+            return self.async_abort(reason="command_failed")
+        selected = available["selected"]
+        if user_input is not None:
+            requested = user_input.get("theme_id")
+            if requested not in {item["id"] for item in available["themes"]}:
+                errors["theme_id"] = "theme_unavailable"
+            else:
+                selected = requested
+                try:
+                    await device.request("set_theme", {"id": selected})
+                    return self.async_create_entry(title="", data=self._options())
+                except (DeviceUnavailable, DeviceRejected, InvalidPayload):
+                    errors["base"] = "command_failed"
+        return self.async_show_form(step_id="theme", data_schema=schema.Schema({
+            schema.Required("theme_id", default=selected): selector.SelectSelector(
+                selector.SelectSelectorConfig(options=[
+                    {"value": item["id"], "label": item["name"]} for item in available["themes"]],
+                    custom_value=False)),
+        }), errors=errors)
 
     async def async_step_profiles(self, user_input=None):
         return self.async_show_menu(step_id="profiles", menu_options=[
