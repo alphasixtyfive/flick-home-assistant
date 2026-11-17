@@ -181,7 +181,7 @@ class SessionTests(unittest.IsolatedAsyncioTestCase):
         task = asyncio.create_task(self.device.request("notify", {"id": "notice", "message": "Hi", "actions": [{"id": "view", "label": "View"}]}))
         await asyncio.sleep(0)
         self.device.receive_result(self.events[-1]["request_id"], False, {}, "permission_required")
-        with self.assertRaisesRegex(DeviceRejected, "Enable this feature"):
+        with self.assertRaisesRegex(DeviceRejected, "unlocked adult profile"):
             await task
         with self.assertRaises(InvalidPayload):
             self.device.notification_action("notice", "view")

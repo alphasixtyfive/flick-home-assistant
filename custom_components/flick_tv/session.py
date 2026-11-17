@@ -140,7 +140,9 @@ class Device:
         if success:
             future.set_result(data)
         else:
-            message = "Enable this feature in Flick's Home Assistant settings on the TV" if error == "permission_required" else "TV rejected the request"
+            message = ("Check the feature's Home Assistant settings in Flick. "
+                       "Launcher management also needs an unlocked adult profile."
+                       if error == "permission_required" else "TV rejected the request")
             future.set_exception(DeviceRejected(message))
         return True
 

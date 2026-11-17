@@ -27,8 +27,9 @@ Flick's ordinary light controls work without this component.
 
 Each device exposes a connection sensor, launcher version, current profile, profile
 selector, Next wallpaper button and notification entity.
-Device options provide native forms for profiles, parent PINs, child app allowlists
-and wallpaper preferences. Online photo collections can be replaced or extended with
+Device options group Slideshow and Profiles. Open Configure → Profiles
+to add or edit a profile, change a parent PIN, manage a child's allowed apps or delete a profile.
+Online photo collections can be replaced or extended with
 `flick_tv.set_wallpapers`.
 
 Enable **Launcher management** on the TV before changing profiles or wallpapers.

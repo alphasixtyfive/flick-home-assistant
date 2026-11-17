@@ -90,7 +90,11 @@ class FlickOptionsFlow(OptionsFlow):
         return device
 
     async def async_step_init(self, user_input=None):
-        return self.async_show_menu(step_id="init", menu_options=["add_profile", "edit_profile", "parent_pin", "delete_profile", "wallpaper"])
+        return self.async_show_menu(step_id="init", menu_options=["wallpaper", "profiles"])
+
+    async def async_step_profiles(self, user_input=None):
+        return self.async_show_menu(step_id="profiles", menu_options=[
+            "add_profile", "edit_profile", "parent_pin", "delete_profile"])
 
     def _options(self):
         entry = self.hass.config_entries.async_get_entry(self._entry_id)
