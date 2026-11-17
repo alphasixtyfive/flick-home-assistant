@@ -7,10 +7,15 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 import hmac
 import time
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
 from .const import COMMAND_TIMEOUT, MAX_PENDING_COMMANDS, MAX_PENDING_PAIRINGS, PAIRING_TTL, PROTOCOL
 from .protocol import InvalidPayload, bounded_object, command_data, connection_data, identifier, secret, status
+
+if TYPE_CHECKING:
+    from .home_text import HomeText
+
 
 class DeviceUnavailable(ConnectionError):
     """The TV cannot complete a request on its current connection."""
@@ -47,6 +52,7 @@ class Device:
         self._send: Callable[[dict], None] | None = None
         self._retire_transport: Callable[[], None] | None = None
         self.status: dict = {}
+        self.home_text: HomeText | None = None
         self._listeners: set[Callable[[], None]] = set()
         self._requests: dict[str, asyncio.Future[dict]] = {}
         self._notices: dict[str, tuple[float, set[str]]] = {}

@@ -6,10 +6,13 @@ from uuid import uuid4
 import probatio as schema
 from homeassistant.config_entries import ConfigFlow, OptionsFlow
 from homeassistant.core import callback
+from homeassistant.exceptions import TemplateError
 from homeassistant.helpers import selector
 from homeassistant.setup import async_setup_component
 
 from .const import DOMAIN
+from .home_text import HomeTextOptions, home_text_options, rendered_text
+from .home_text_template import validate_home_text_template
 from .profile_options import app_options
 from .protocol import InvalidPayload, parent_pin, profile, profile_patch, text, themes
 from .session import DeviceRejected, DeviceUnavailable
@@ -90,9 +93,9 @@ class FlickOptionsFlow(OptionsFlow):
         return device
 
     async def async_step_init(self, user_input=None):
-        choices = ["wallpaper", "profiles"]
+        choices = ["home_text", "wallpaper", "profiles"]
         if self._supports_themes():
-            choices.insert(0, "theme")
+            choices.insert(1, "theme")
         return self.async_show_menu(step_id="init", menu_options=choices)
 
     def _supports_themes(self):
@@ -134,7 +137,31 @@ class FlickOptionsFlow(OptionsFlow):
 
     def _options(self):
         entry = self.hass.config_entries.async_get_entry(self._entry_id)
-        return dict(entry.options) if entry is not None else {}
+        if entry is None or "home_text" not in entry.options:
+            return {}
+        return {"home_text": entry.options["home_text"]}
+
+    async def async_step_home_text(self, user_input=None):
+        errors = {}
+        if user_input is not None:
+            try:
+                options = HomeTextOptions.parse(user_input)
+            except InvalidPayload:
+                errors["base"] = "invalid_template"
+            if not errors and options.template.strip():
+                try:
+                    rendered_text(validate_home_text_template(self.hass, options.template))
+                except (InvalidPayload, TemplateError):
+                    errors["template"] = "invalid_template"
+            if not errors:
+                return self.async_create_entry(title="", data={
+                    **self._options(), "home_text": options.as_dict()})
+        values = user_input if user_input is not None else home_text_options(self._options()).as_dict()
+        return self.async_show_form(step_id="home_text", data_schema=schema.Schema({
+            schema.Optional("template", default=values.get("template", "")): selector.TemplateSelector(),
+            schema.Required("show_for_children", default=values.get("show_for_children", False)):
+                selector.BooleanSelector(),
+        }), errors=errors)
 
     async def _load_profiles(self, *, include_apps=False):
         data = await self._device().request("list_profiles")

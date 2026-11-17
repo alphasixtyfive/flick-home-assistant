@@ -6,6 +6,7 @@ from homeassistant.core import callback
 from homeassistant.helpers.http import current_request
 
 from .const import DOMAIN
+from .home_text import MAX_GENERATION
 from .protocol import InvalidPayload, bounded_object, text
 
 
@@ -23,7 +24,7 @@ def _device(hass, connection, message):
 
 @callback
 def async_register_commands(hass):
-    for command in (ws_connect, ws_result, ws_status, ws_notification_action):
+    for command in (ws_connect, ws_result, ws_status, ws_notification_action, ws_home_text):
         websocket_api.async_register_command(hass, command)
 
 
@@ -57,6 +58,27 @@ def ws_connect(hass, connection, message):
 
 
 _AUTH = {schema.Required("device_id"): str, schema.Required("device_secret"): str}
+
+
+@websocket_api.websocket_command({
+    schema.Required("type"): "flick_tv/home_text", **_AUTH,
+    schema.Required("profile_id"): str,
+    schema.Required("profile_generation"): schema.All(int, schema.Range(min=0, max=MAX_GENERATION)),
+})
+@callback
+def ws_home_text(hass, connection, message):
+    try:
+        device = _device(hass, connection, message)
+        manager = device.home_text
+        if manager is None:
+            raise InvalidPayload("Home screen text is not ready")
+        subscription = manager.subscribe(
+            message["profile_id"], message["profile_generation"],
+            lambda value: connection.send_event(message["id"], value))
+        connection.subscriptions[message["id"]] = subscription.close
+        connection.send_result(message["id"])
+    except InvalidPayload:
+        connection.send_error(message["id"], "invalid_home_text", "Home screen text is unavailable")
 
 
 @websocket_api.websocket_command({

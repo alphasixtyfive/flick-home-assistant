@@ -4,13 +4,17 @@
     "step": {
       "user": {
         "title": "Pair a TV",
-        "description": "In Flick, open Settings → Home Assistant → TV integration → Pair TV. Enter the six-digit code shown on that TV.",
-        "data": {"pairing_code": "Pairing code"}
+        "description": "In Flick, open Settings → Home Assistant → TV connection → Pair TV. Enter the six-digit code shown on that TV.",
+        "data": {
+          "pairing_code": "Pairing code"
+        }
       },
       "confirm": {
         "title": "Confirm this TV",
         "description": "Pair **{name}** with Home Assistant? Choose a name such as Bedroom TV.\n\n{replacement}",
-        "data": {"name": "TV name"}
+        "data": {
+          "name": "TV name"
+        }
       }
     },
     "error": {
@@ -30,7 +34,8 @@
         "menu_options": {
           "profiles": "Profiles",
           "wallpaper": "Slideshow",
-          "theme": "Theme"
+          "theme": "Theme",
+          "home_text": "Home screen text"
         }
       },
       "profiles": {
@@ -44,33 +49,69 @@
       },
       "theme": {
         "title": "Theme",
-        "description": "Choose a theme already available on this TV. Import additional themes in Flick’s Appearance settings. Launcher management must be enabled and an adult profile unlocked.",
-        "data": {"theme_id": "Theme"}
+        "description": "Choose a theme already available on this TV. Import additional themes in Flick’s Home screen → Theme settings. Launcher management must be enabled and an adult profile unlocked.",
+        "data": {
+          "theme_id": "Theme"
+        }
       },
-      "add_profile": {"title": "Add profile"},
-      "edit_profile": {"title": "Edit profile", "data": {"profile_id": "Profile"}},
+      "add_profile": {
+        "title": "Add profile"
+      },
+      "edit_profile": {
+        "title": "Edit profile",
+        "data": {
+          "profile_id": "Profile"
+        }
+      },
       "profile": {
         "title": "Profile",
-        "description": "Enable Launcher management in Flick's TV integration settings first. Set a four-digit parent PIN for every adult before adding a child profile. A blank PIN keeps the existing one.",
-        "data": {"name": "Name", "child": "Child profile", "pin": "Parent PIN", "allowed_apps": "Allowed apps"}
+        "description": "Enable Launcher management in Flick's TV connection settings first. Set a four-digit parent PIN for every adult before adding a child profile. A blank PIN keeps the existing one.",
+        "data": {
+          "name": "Name",
+          "child": "Child profile",
+          "pin": "Parent PIN",
+          "allowed_apps": "Allowed apps"
+        }
       },
       "parent_pin": {
         "title": "Change parent PIN",
         "description": "Use exactly four digits. The PIN is sent to the paired TV and is not saved in Home Assistant's integration options.",
-        "data": {"profile_id": "Adult profile", "pin": "New parent PIN"}
+        "data": {
+          "profile_id": "Adult profile",
+          "pin": "New parent PIN"
+        }
       },
       "delete_profile": {
         "title": "Delete profile",
         "description": "Delete the selected profile from the TV. At least one adult profile must remain.",
-        "data": {"profile_id": "Profile to delete"}
+        "data": {
+          "profile_id": "Profile to delete"
+        }
       },
       "wallpaper": {
         "title": "Slideshow",
         "description": "Only the preferences entered here change. Choose photo folders and local pictures on the TV; use the Set wallpapers action for online collections.",
-        "data": {"interval_seconds": "Change photo every (seconds)", "shuffle": "Shuffle", "dim_amount": "Dimming"}
+        "data": {
+          "interval_seconds": "Change photo every (seconds)",
+          "shuffle": "Shuffle",
+          "dim_amount": "Dimming"
+        }
+      },
+      "home_text": {
+        "title": "Home screen text",
+        "description": "Enter text or a Home Assistant template. Leave blank to hide it. Long output is shortened on the TV.",
+        "data": {
+          "template": "Message",
+          "show_for_children": "Show in child profiles"
+        }
       }
     },
-    "error": {"theme_unavailable": "This theme is no longer available. Choose another theme.", "invalid_pin": "Enter exactly four digits.", "command_failed": "Connect the TV, enable Launcher management in Flick and unlock an adult profile. Adult profiles need a PIN when children are configured."},
+    "error": {
+      "theme_unavailable": "This theme is no longer available. Choose another theme.",
+      "invalid_pin": "Enter exactly four digits.",
+      "invalid_template": "Enter a valid text template with at most 8192 characters. Check it in Developer tools → Template.",
+      "command_failed": "Connect the TV, enable Launcher management in Flick and unlock an adult profile. Adult profiles need a PIN when children are configured."
+    },
     "abort": {
       "theme_unavailable": "This TV does not support theme selection. Update Flick and reconnect the TV.",
       "command_failed": "Connect the TV, enable Launcher management in Flick and unlock an adult profile.",

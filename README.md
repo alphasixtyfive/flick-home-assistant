@@ -8,7 +8,7 @@ Connect the [Flick Android TV launcher](https://github.com/alphasixtyfive/flick)
 Home Assistant. Each paired TV appears as a device with profile selection, wallpaper
 controls and notifications.
 
-Requires Home Assistant 2026.11 or later and Flick 0.2.2 or later. This is an early
+Requires Home Assistant 2026.11 or later and Flick 0.2.28 or later. This is an early
 development version.
 
 ## Install
@@ -17,7 +17,7 @@ Copy `custom_components/flick_tv` into Home Assistant's `custom_components` dire
 then restart Home Assistant. Add **Flick TV** from Settings → Devices & services.
 
 In Flick, connect a dedicated non-admin Home Assistant account under Settings → Home
-Assistant. Open TV integration → Pair TV and enter its six-digit code in Home Assistant.
+Assistant. Open TV connection → Pair TV and enter its six-digit code in Home Assistant.
 Confirm the TV name. The code expires after five minutes. Pairing is approved through
 an administrator's Home Assistant session; the TV keeps its non-admin account.
 
@@ -27,14 +27,14 @@ Flick's ordinary light controls work without this component.
 
 Each device exposes a connection sensor, launcher version, current profile, profile
 selector, Next wallpaper button and notification entity.
-Device options group Slideshow and Profiles. Open Configure → Profiles
+Device options group Home screen text, Slideshow and Profiles. Open Configure → Profiles
 to add or edit a profile, change a parent PIN, manage a child's allowed apps or delete a profile.
 Online photo collections can be replaced or extended with
 `flick_tv.set_wallpapers`.
 
 On TVs that support themes, **Configure → Theme** lists the presets and imported themes
 currently available on that TV. Select a theme to apply it immediately. Import theme files
-under Flick's Appearance settings; Home Assistant does not edit theme files or store a
+under Flick's Home screen → Theme settings; Home Assistant does not edit theme files or store a
 second copy of the selection.
 
 Enable **Launcher management** on the TV before changing profiles or wallpapers.
@@ -53,6 +53,42 @@ decide what those IDs mean. The TV cannot choose an arbitrary Home Assistant ser
 
 Notifications over other apps require Android's Display over other apps permission.
 Android can hide overlays on protected content.
+
+## Home screen text
+
+Enable **Home screen text** in Flick's Home Assistant settings. In Home Assistant, open
+Settings → Devices & services → Flick TV → Configure → Home screen text for the paired TV.
+Enter text or a template in **Message**. The source can contain up to 8192 characters.
+Empty output hides it. Rendered output is one line, limited to 120 Unicode characters.
+The message appears as plain text centred at the top of Home, using the date and
+weather text size. Include any symbols directly in the message; their appearance
+depends on the TV's fonts. Whitespace is collapsed to spaces, and HTML is displayed
+literally.
+
+For example, using your own route-switch entity:
+
+```jinja2
+{% if has_value('switch.tv_vpn_route') %}
+VPN route {{ 'enabled' if is_state('switch.tv_vpn_route', 'on') else 'disabled' }}
+{% endif %}
+```
+
+A route switch reports the requested routing policy. Showing a verified VPN connection
+or exit city requires a separate measurement through that TV's route.
+
+Home Assistant renders the template and follows its dependencies. Flick receives only the
+result over its paired connection; no helper entity, wallpaper service or launcher-management
+permission is needed. Changes are combined into at most one update per second. Templates
+that scan whole domains may also be rate-limited by Home Assistant.
+
+Text is hidden from child profiles unless **Show in child profiles** is enabled. It is cleared
+when the TV disconnects, changes profiles or the template fails.
+Configure source availability in the template when the freshness of a measurement matters. An unchanged state is not
+automatically stale. Templates and rendered text are omitted from integration diagnostics.
+After updating the integration, refresh the Home Assistant browser tab before reopening
+Configure → Home screen text.
+
+The native template editor grows with its contents. Use its expand button for full-screen editing; the integration does not override Home Assistant’s editor styling.
 
 ## Test notifications
 
