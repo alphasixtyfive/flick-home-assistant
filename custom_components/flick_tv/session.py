@@ -12,7 +12,6 @@ from uuid import uuid4
 from .const import COMMAND_TIMEOUT, MAX_PENDING_COMMANDS, MAX_PENDING_PAIRINGS, PAIRING_TTL, PROTOCOL
 from .protocol import InvalidPayload, bounded_object, command_data, connection_data, identifier, secret, status
 
-
 class DeviceUnavailable(ConnectionError):
     """The TV cannot complete a request on its current connection."""
 
@@ -31,6 +30,7 @@ class PendingPairing:
     expires: float
     transport: object = field(repr=False)
     send: Callable[[dict], None] = field(repr=False)
+    retire: Callable[[], None] | None = field(default=None, repr=False)
 
     def entry_data(self) -> dict:
         return {"device_id": self.device_id, "name": self.name, "user_id": self.user_id,
@@ -45,6 +45,7 @@ class Device:
         self._secret = secret(entry_data["device_secret"])
         self.transport: object | None = None
         self._send: Callable[[dict], None] | None = None
+        self._retire_transport: Callable[[], None] | None = None
         self.status: dict = {}
         self._listeners: set[Callable[[], None]] = set()
         self._requests: dict[str, asyncio.Future[dict]] = {}
@@ -69,15 +70,23 @@ class Device:
         for listener in tuple(self._listeners):
             listener()
 
-    def attach(self, transport: object, send: Callable[[dict], None]) -> None:
-        self.disconnect()
-        self.transport, self._send = transport, send
+    def attach(self, transport: object, send: Callable[[dict], None],
+               retire: Callable[[], None] | None = None) -> None:
+        self.retire()
+        self.transport, self._send, self._retire_transport = transport, send, retire
         self._changed()
+
+    def retire(self) -> None:
+        """End the old paired socket when its registry owner is replaced or unloaded."""
+        close = self._retire_transport
+        self.disconnect()
+        if close is not None:
+            close()
 
     def disconnect(self, transport: object | None = None) -> None:
         if transport is not None and self.transport is not transport:
             return
-        self.transport, self._send = None, None
+        self.transport, self._send, self._retire_transport = None, None, None
         for pending in self._requests.values():
             if not pending.done():
                 pending.set_exception(DeviceUnavailable("TV disconnected"))
@@ -166,14 +175,15 @@ class Registry:
         self.pending: dict[str, PendingPairing] = {}
         self.clock = clock
 
-    def connect(self, value: dict, user_id: str, transport: object, send: Callable[[dict], None]) -> dict:
+    def connect(self, value: dict, user_id: str, transport: object, send: Callable[[dict], None],
+                *, retire: Callable[[], None] | None = None) -> dict:
         data = connection_data(value)
         device_id = data["device_id"]
         device = self.devices.get(device_id)
         if device is not None and device.transport is transport and device.connected:
             raise InvalidPayload("This TV already has a subscription on this connection")
         if device is not None and device.matches(user_id, data["device_secret"]):
-            device.attach(transport, send)
+            device.attach(transport, send, retire)
             return {"status": "connected", "protocol": PROTOCOL}
         self._expire()
         code = data.get("pairing_code")
@@ -189,7 +199,7 @@ class Registry:
         if existing is None and len(self.pending) >= MAX_PENDING_PAIRINGS:
             raise InvalidPayload("Too many pending TVs; try again later")
         expires = existing.expires if existing and existing.code == code else self.clock() + PAIRING_TTL
-        self.pending[device_id] = PendingPairing(device_id, data["name"], user_id, data["device_secret"], code, expires, transport, send)
+        self.pending[device_id] = PendingPairing(device_id, data["name"], user_id, data["device_secret"], code, expires, transport, send, retire)
         return {"status": "pending", "protocol": PROTOCOL, "expires_in": max(0, int(expires - self.clock()))}
 
     def pairing(self, code: str) -> PendingPairing:
@@ -203,13 +213,13 @@ class Registry:
         device = Device(entry_data)
         previous = self.devices.pop(device.device_id, None)
         if previous:
-            previous.disconnect()
+            previous.retire()
         self.devices[device.device_id] = device
         self._expire()
         pending = self.pending.get(device.device_id)
         if pending and device.matches(pending.user_id, pending.device_secret):
             self.pending.pop(device.device_id)
-            device.attach(pending.transport, pending.send)
+            device.attach(pending.transport, pending.send, pending.retire)
             try:
                 pending.send({"type": "paired", "protocol": PROTOCOL})
             except Exception:
@@ -219,7 +229,7 @@ class Registry:
 
     def unregister(self, device_id: str) -> None:
         if device := self.devices.pop(device_id, None):
-            device.disconnect()
+            device.retire()
 
     def disconnect(self, device_id: str, transport: object) -> None:
         pending = self.pending.get(device_id)

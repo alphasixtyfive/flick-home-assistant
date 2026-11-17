@@ -1,4 +1,4 @@
-"""Administrator setup and ephemeral launcher configuration forms."""
+"""Administrator pairing and launcher configuration forms."""
 
 from __future__ import annotations
 
@@ -92,6 +92,10 @@ class FlickOptionsFlow(OptionsFlow):
     async def async_step_init(self, user_input=None):
         return self.async_show_menu(step_id="init", menu_options=["add_profile", "edit_profile", "parent_pin", "delete_profile", "wallpaper"])
 
+    def _options(self):
+        entry = self.hass.config_entries.async_get_entry(self._entry_id)
+        return dict(entry.options) if entry is not None else {}
+
     async def _load_profiles(self, *, include_apps=False):
         data = await self._device().request("list_profiles")
         profiles = data.get("profiles", [])
@@ -159,7 +163,7 @@ class FlickOptionsFlow(OptionsFlow):
             if not errors:
                 try:
                     await self._device().request("set_profile", patch, allow_pin=True)
-                    return self.async_create_entry(title="", data={})
+                    return self.async_create_entry(title="", data=self._options())
                 except (DeviceUnavailable, DeviceRejected, InvalidPayload):
                     errors["base"] = "command_failed"
         existing = self._editing
@@ -185,7 +189,7 @@ class FlickOptionsFlow(OptionsFlow):
             if not errors:
                 try:
                     await self._device().request("set_profile", {"id": user_input["profile_id"], "pin": pin}, allow_pin=True)
-                    return self.async_create_entry(title="", data={})
+                    return self.async_create_entry(title="", data=self._options())
                 except (DeviceUnavailable, DeviceRejected, InvalidPayload):
                     errors["base"] = "command_failed"
         try:
@@ -200,7 +204,7 @@ class FlickOptionsFlow(OptionsFlow):
         if user_input is not None:
             try:
                 await self._device().request("delete_profile", {"id": user_input["profile_id"]})
-                return self.async_create_entry(title="", data={})
+                return self.async_create_entry(title="", data=self._options())
             except (DeviceUnavailable, DeviceRejected, InvalidPayload):
                 errors["base"] = "command_failed"
         try:
@@ -218,7 +222,7 @@ class FlickOptionsFlow(OptionsFlow):
                 if "interval_seconds" in data and type(data["interval_seconds"]) in (int, float) and float(data["interval_seconds"]).is_integer():
                     data["interval_seconds"] = int(data["interval_seconds"])
                 await self._device().request("set_wallpaper_options", data)
-                return self.async_create_entry(title="", data={})
+                return self.async_create_entry(title="", data=self._options())
             except (DeviceUnavailable, DeviceRejected, InvalidPayload):
                 errors["base"] = "command_failed"
         return self.async_show_form(step_id="wallpaper", data_schema=schema.Schema({

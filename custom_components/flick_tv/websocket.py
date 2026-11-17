@@ -3,6 +3,7 @@
 import probatio as schema
 from homeassistant.components import websocket_api
 from homeassistant.core import callback
+from homeassistant.helpers.http import current_request
 
 from .const import DOMAIN
 from .protocol import InvalidPayload, bounded_object, text
@@ -41,8 +42,14 @@ def ws_connect(hass, connection, message):
         if user.is_admin:
             raise InvalidPayload("Use a dedicated non-admin TV user")
         data = {key: value for key, value in message.items() if key not in ("id", "type")}
+        request = current_request.get()
+        transport = request.transport if request is not None else None
+        if transport is None:
+            raise InvalidPayload("The TV connection is closing")
         registry = hass.data[DOMAIN]
-        result = registry.connect(data, user.id, connection, lambda event: connection.send_event(message["id"], event))
+        # Retain only this socket's public close callback, not the HTTP request or HA connection.
+        result = registry.connect(data, user.id, connection,
+            lambda event: connection.send_event(message["id"], event), retire=transport.close)
         connection.subscriptions[message["id"]] = lambda: registry.disconnect(data["device_id"], connection)
         connection.send_result(message["id"], result)
     except InvalidPayload as err:

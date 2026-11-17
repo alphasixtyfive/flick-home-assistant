@@ -15,6 +15,16 @@ def connect_data(device_id="tv-1", *, code="123456", secret="a" * 64):
 
 
 class PairingTests(unittest.TestCase):
+    def test_pairing_retains_socket_retirement_until_entry_unloads(self):
+        registry = Registry()
+        closed = []
+        registry.connect(connect_data(), "tv-user", object(), lambda event: None,
+                         retire=lambda: closed.append(True))
+        registry.register(registry.pairing("123456").entry_data())
+        self.assertEqual([], closed)
+        registry.unregister("tv-1")
+        self.assertEqual([True], closed)
+
     def test_pairing_needs_explicit_approval_and_expires_without_extension(self):
         clock = [100.0]
         registry = Registry(clock=lambda: clock[0])
@@ -78,6 +88,47 @@ class SessionTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(self.device.receive_result(request_id, True, {"changed": True}))
         self.assertFalse(self.device.receive_result(request_id, True, {}))
         self.assertEqual({"changed": True}, await task)
+
+    async def test_unload_invalidates_state_before_closing_owned_socket_once(self):
+        closed_states = []
+        self.device.attach(self.connection, self.events.append,
+                           lambda: closed_states.append(self.device.connected))
+        task = asyncio.create_task(self.device.request("next_wallpaper"))
+        await asyncio.sleep(0)
+        self.registry.unregister("tv-1")
+        self.registry.unregister("tv-1")
+        self.assertEqual([False], closed_states)
+        with self.assertRaises(DeviceUnavailable):
+            await task
+
+    async def test_replacement_closes_old_socket_and_stale_cleanup_preserves_new_socket(self):
+        closed = []
+        self.device.attach(self.connection, self.events.append, lambda: closed.append("old"))
+        new_connection = object()
+        self.registry.connect(connect_data(code=None), "tv-user", new_connection,
+                              self.events.append, retire=lambda: closed.append("new"))
+        self.assertEqual(["old"], closed)
+        self.registry.disconnect("tv-1", self.connection)
+        self.assertTrue(self.device.connected)
+        self.assertEqual(["old"], closed)
+        self.registry.unregister("tv-1")
+        self.assertEqual(["old", "new"], closed)
+
+    async def test_normal_unsubscribe_does_not_close_transport_or_retain_close_callback(self):
+        closed = []
+        self.device.attach(self.connection, self.events.append, lambda: closed.append(True))
+        self.registry.disconnect("tv-1", self.connection)
+        self.registry.unregister("tv-1")
+        self.assertEqual([], closed)
+
+    async def test_registering_replacement_entry_closes_previous_paired_socket(self):
+        closed = []
+        self.device.attach(self.connection, self.events.append, lambda: closed.append(True))
+        replacement = self.registry.register({"device_id": "tv-1", "name": "Test TV",
+            "user_id": "tv-user", "device_secret": "a" * 64, "protocol": 1})
+        self.assertEqual([True], closed)
+        self.assertIsNot(replacement, self.device)
+        self.assertFalse(self.device.connected)
 
     async def test_old_connection_user_and_secret_cannot_submit_replies(self):
         for secret, user, connection in (("b" * 64, "tv-user", self.connection), ("a" * 64, "other", self.connection), ("a" * 64, "tv-user", object())):
