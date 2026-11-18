@@ -8,13 +8,15 @@ Connect the [Flick Android TV launcher](https://github.com/alphasixtyfive/flick)
 Home Assistant. Each paired TV appears as a device with profile selection, wallpaper
 controls and notifications.
 
-Requires Home Assistant 2026.11 or later and Flick 0.2.28 or later. This is an early
-development version.
+Requires Home Assistant 2026.11 or later and Flick 0.2.28 or later.
+
+[Releases](https://github.com/alphasixtyfive/flick-home-assistant/releases) ·
+[Report an issue](https://github.com/alphasixtyfive/flick-home-assistant/issues)
 
 ## Install
 
-Copy `custom_components/flick_tv` into Home Assistant's `custom_components` directory,
-then restart Home Assistant. Add **Flick TV** from Settings → Devices & services.
+Download the source ZIP for the [latest release](https://github.com/alphasixtyfive/flick-home-assistant/releases/latest).
+Copy `custom_components/flick_tv` into Home Assistant's `custom_components` directory, then restart Home Assistant. Add **Flick TV** from Settings → Devices & services.
 
 In Flick, connect a dedicated non-admin Home Assistant account under Settings → Home
 Assistant. Open TV connection → Pair TV and enter its six-digit code in Home Assistant.
@@ -152,3 +154,9 @@ Home Assistant and TV versions. See the launcher's
 The square brand icon ships in `custom_components/flick_tv/brand/` at 256px and 512px.
 Both PNGs use the vector source in `docs/assets/flick.svg`. Home Assistant loads them through its
 [native branding support](https://contributors.home-assistant.io/core/integrations/brands/); no dashboard resource is needed.
+
+## Releases
+
+Set the version in `custom_components/flick_tv/manifest.json` and publish a matching
+`v<version>` tag and GitHub release. List any changes to the supported Home Assistant
+or Flick versions in the release notes. Keep older releases and tags available.
