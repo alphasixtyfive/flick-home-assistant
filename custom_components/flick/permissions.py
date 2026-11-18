@@ -13,4 +13,4 @@ async def async_require_management(hass, context) -> None:
     user_id = context.user_id
     user = await hass.auth.async_get_user(user_id) if user_id is not None else None
     if not management_allowed(user_id, user):
-        raise Unauthorized(permission="manage_flick_tv")
+        raise Unauthorized(permission="manage_flick")

@@ -3,8 +3,8 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from custom_components.flick_tv.protocol import InvalidPayload
-from custom_components.flick_tv.session import DeviceRejected, DeviceUnavailable, Registry
+from custom_components.flick.protocol import InvalidPayload
+from custom_components.flick.session import DeviceRejected, DeviceUnavailable, Registry
 
 
 def connect_data(device_id="tv-1", *, code="123456", secret="a" * 64):
@@ -89,6 +89,16 @@ class SessionTests(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(self.device.receive_result(request_id, True, {}))
         self.assertEqual({"changed": True}, await task)
 
+    async def test_duplicate_status_does_not_write_entity_state_again(self):
+        writes = []
+        self.device.listen(lambda: writes.append(self.device.status))
+        profile = {"id": "adult", "name": "Adult", "child": False}
+        status = {"version": "1.0", "profile": profile, "profiles": [profile], "capabilities": []}
+        self.device.receive_status(status)
+        self.device.receive_status(status)
+        self.device.receive_status(status | {"capabilities": ["camera_view"]})
+        self.assertEqual([[], ["camera_view"]], [item["capabilities"] for item in writes])
+
     async def test_unload_invalidates_state_before_closing_owned_socket_once(self):
         closed_states = []
         self.device.attach(self.connection, self.events.append,
@@ -167,6 +177,25 @@ class SessionTests(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(InvalidPayload):
             self.device.notification_action("doorbell", "view")
 
+    async def test_plain_notifications_do_not_evict_actions_from_an_active_notice(self):
+        data = {"id": "doorbell", "message": "Hi", "actions": [{"id": "view", "label": "View"}]}
+
+        async def send(payload):
+            task = asyncio.create_task(self.device.request("notify", payload))
+            await asyncio.sleep(0)
+            self.device.receive_result(self.events[-1]["request_id"], True, {})
+            await task
+
+        await send(data)
+        for index in range(65):
+            await send({"id": f"plain-{index}", "message": "Hi"})
+        self.assertEqual("view", self.device.notification_action("doorbell", "view")["action_id"])
+
+        await send(data)
+        await send({"id": "doorbell", "message": "Replaced"})
+        with self.assertRaises(InvalidPayload):
+            self.device.notification_action("doorbell", "view")
+
     async def test_notification_actions_do_not_cross_between_devices(self):
         self.registry.connect(connect_data("tv-2", code="654321", secret="b" * 64), "tv-user", object(), lambda event: None)
         other = self.registry.register(self.registry.pairing("654321").entry_data())
@@ -204,7 +233,7 @@ class SessionTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_zero_timeout_actions_expire_like_the_default_notification(self):
         clock = [100.0]
-        with patch("custom_components.flick_tv.session.time", SimpleNamespace(monotonic=lambda: clock[0])):
+        with patch("custom_components.flick.session.time", SimpleNamespace(monotonic=lambda: clock[0])):
             for timeout in (0, 8):
                 notification_id = f"notice-{timeout}"
                 task = asyncio.create_task(self.device.request("notify", {
@@ -221,7 +250,7 @@ class SessionTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_persistent_actions_remain_available_after_the_default_timeout(self):
         clock = [100.0]
-        with patch("custom_components.flick_tv.session.time", SimpleNamespace(monotonic=lambda: clock[0])):
+        with patch("custom_components.flick.session.time", SimpleNamespace(monotonic=lambda: clock[0])):
             task = asyncio.create_task(self.device.request("notify", {
                 "id": "persistent", "message": "Hi", "persistent": True, "timeout": 0,
                 "actions": [{"id": "view", "label": "View"}],

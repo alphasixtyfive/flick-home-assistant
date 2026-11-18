@@ -22,16 +22,16 @@ async def async_setup_entry(hass, entry):
 
     registry = hass.data[DOMAIN]
     device = registry.register(dict(entry.data))
-    manager = HomeText(device, entry.options,
-        lambda source, observed: track_home_text(hass, source, observed), asyncio.get_running_loop())
-    device.home_text = manager
-    entry.runtime_data = device
-    entry.async_on_unload(entry.add_update_listener(async_options_updated))
     try:
+        device.home_text = HomeText(device, entry.options,
+            lambda source, observed: track_home_text(hass, source, observed), asyncio.get_running_loop())
+        entry.runtime_data = device
+        entry.async_on_unload(entry.add_update_listener(async_options_updated))
         await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
-    except Exception:
-        manager.close()
-        device.home_text = None
+    except (asyncio.CancelledError, Exception):
+        if device.home_text is not None:
+            device.home_text.close()
+            device.home_text = None
         registry.unregister(device.device_id)
         raise
     return True

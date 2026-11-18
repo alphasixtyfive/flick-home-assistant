@@ -1,4 +1,4 @@
-"""Standard message/title notifications; rich cards use flick_tv.notify."""
+"""Standard message/title notifications; rich cards use flick.notify."""
 
 from uuid import uuid4
 from homeassistant.components.notify import NotifyEntity, NotifyEntityFeature

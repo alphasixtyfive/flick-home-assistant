@@ -1,5 +1,5 @@
 {
-  "title": "Flick TV",
+  "title": "Flick",
   "config": {
     "step": {
       "user": {
@@ -22,7 +22,7 @@
       "invalid_name": "Enter a TV name with one to eighty characters."
     },
     "abort": {
-      "setup_failed": "Flick TV could not start. Check the Home Assistant log and try again.",
+      "setup_failed": "Flick could not start. Check the Home Assistant log and try again.",
       "pairing_expired": "The pairing code expired. Generate a new code on the TV.",
       "reconfigured": "The TV's pairing has been updated."
     }
@@ -30,7 +30,7 @@
   "options": {
     "step": {
       "init": {
-        "title": "Flick TV options",
+        "title": "Flick options",
         "menu_options": {
           "profiles": "Profiles",
           "wallpaper": "Slideshow",

@@ -75,6 +75,14 @@ def text(value: object, maximum: int, *, empty: bool = False) -> str:
     return value
 
 
+def camera_title(name: object) -> str:
+    """Fit a camera name to Android's 100 UTF-16 code unit limit."""
+    if not isinstance(name, str):
+        return ""
+    name = "".join(char for char in name if ord(char) >= 32 and not 127 <= ord(char) <= 159)
+    return name.encode("utf-16-le", errors="ignore")[:200].decode("utf-16-le", errors="ignore").strip()
+
+
 def identifier(value: object) -> str:
     if not isinstance(value, str) or not _ID.fullmatch(value):
         raise InvalidPayload("Invalid identifier")
@@ -276,6 +284,11 @@ def command_data(command: str, value: object, *, allow_pin: bool = False) -> dic
         return profile_patch(data, allow_pin=allow_pin)
     elif command == "notify":
         return notification(data)
+    elif command == "open_camera":
+        fields(data, {"camera_entity_id", "title"}, {"camera_entity_id"})
+        data["camera_entity_id"] = camera_entity_id(data["camera_entity_id"])
+        if "title" in data:
+            text(data["title"], 100)
     elif command == "set_wallpaper_options":
         fields(data, {"interval_seconds", "shuffle", "dim_amount"})
         if not data:

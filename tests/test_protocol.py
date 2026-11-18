@@ -1,9 +1,9 @@
 import math
 import unittest
 from unittest.mock import patch
-from custom_components.flick_tv.const import MAX_PAYLOAD_BYTES
+from custom_components.flick.const import MAX_PAYLOAD_BYTES
 
-from custom_components.flick_tv.protocol import (
+from custom_components.flick.protocol import (
     InvalidPayload, bounded_object, command_data, connection_data, notification, profile_patch, status, themes,
 )
 
@@ -201,13 +201,13 @@ class TraversalBudgetTests(unittest.TestCase):
     def test_wide_nested_arrays_stop_at_the_global_node_limit(self):
         # Every list and the encoded message fit their individual limits.
         value = {"rows": [[None] * 512 for _ in range(24)]}
-        with patch("custom_components.flick_tv.protocol.json.dumps") as encode:
+        with patch("custom_components.flick.protocol.json.dumps") as encode:
             with self.assertRaises(InvalidPayload):
                 bounded_object(value)
             encode.assert_not_called()
 
     def test_oversized_strings_are_rejected_before_serialization(self):
-        with patch("custom_components.flick_tv.protocol.json.dumps") as encode:
+        with patch("custom_components.flick.protocol.json.dumps") as encode:
             with self.assertRaises(InvalidPayload):
                 bounded_object({"message": "x" * (MAX_PAYLOAD_BYTES + 1)})
             encode.assert_not_called()
@@ -215,7 +215,27 @@ class TraversalBudgetTests(unittest.TestCase):
     def test_shared_strings_cannot_expand_into_a_huge_serialized_message(self):
         # Reusing one input string is cheap; serializing every reference would not be.
         value = {"rows": ["x" * (MAX_PAYLOAD_BYTES // 4)] * 8}
-        with patch("custom_components.flick_tv.protocol.json.dumps") as encode:
+        with patch("custom_components.flick.protocol.json.dumps") as encode:
             with self.assertRaises(InvalidPayload):
                 bounded_object(value)
             encode.assert_not_called()
+
+
+class OpenCameraTest(unittest.TestCase):
+    def test_camera_title_fits_android_without_splitting_a_surrogate_pair(self):
+        from custom_components.flick.protocol import camera_title
+
+        self.assertEqual("Front door", camera_title(" \x00Front\x85 door\x7f "))
+        self.assertEqual("", camera_title(None))
+        self.assertEqual("a" * 99, camera_title("a" * 99 + "🎥"))
+        self.assertEqual("🎥" * 50, camera_title("🎥" * 60))
+
+    def test_open_camera_only_accepts_a_camera_entity(self):
+        self.assertEqual(
+            command_data("open_camera", {"camera_entity_id": "camera.entry", "title": "Entry"}),
+            {"camera_entity_id": "camera.entry", "title": "Entry"},
+        )
+        for data in ({"camera_entity_id": "switch.entry"}, {"camera_entity_id": "https://example.test/feed"},
+                     {"camera_entity_id": "camera.entry", "url": "https://example.test/feed"}):
+            with self.assertRaises(InvalidPayload):
+                command_data("open_camera", data)

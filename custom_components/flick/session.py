@@ -101,8 +101,9 @@ class Device:
 
     def receive_status(self, value: dict) -> None:
         latest = status(value)
-        self.status = latest
-        self._changed()
+        if latest != self.status:
+            self.status = latest
+            self._changed()
 
     async def request(self, command: str, data: dict | None = None, *, allow_pin: bool = False,
                       timeout: float = COMMAND_TIMEOUT) -> dict:
@@ -115,26 +116,24 @@ class Device:
         future = asyncio.get_running_loop().create_future()
         self._requests[request_id] = future
         notice = self._remember_notification(payload) if command == "notify" else None
+        succeeded = False
         try:
             self._send({"type": "command", "protocol": PROTOCOL, "request_id": request_id,
                         "command": command, "data": payload})
             async with asyncio.timeout(timeout):
-                return await future
+                result = await future
+            succeeded = True
+            return result
         except TimeoutError as err:
-            if command == "notify":
-                self._forget_notification(payload["id"], notice)
             raise DeviceUnavailable("TV did not respond in time") from err
         except (DeviceUnavailable, DeviceRejected, asyncio.CancelledError):
-            if command == "notify":
-                self._forget_notification(payload["id"], notice)
             raise
         except Exception as err:
-            if command == "notify":
-                self._forget_notification(payload["id"], notice)
             raise DeviceUnavailable("TV connection could not accept the request") from err
         finally:
             self._requests.pop(request_id, None)
-
+            if notice is not None and not succeeded:
+                self._forget_notification(payload["id"], notice)
 
     def receive_result(self, request_id: str, success: bool, value: dict, error: str | None = None) -> bool:
         future = self._requests.get(identifier(request_id))
@@ -157,9 +156,11 @@ class Device:
             self._notices.pop(notification_id, None)
 
     def _remember_notification(self, data: dict):
+        self._notices.pop(data["id"], None)
+        if not data["actions"]:
+            return None
         now = time.monotonic()
         self._notices = {key: notice for key, notice in self._notices.items() if notice[0] > now}
-        self._notices.pop(data["id"], None)
         while len(self._notices) >= 64:
             self._notices.pop(next(iter(self._notices)))
         lifetime = 86400 if data["persistent"] else (data["timeout"] or 8) + 30

@@ -4,6 +4,7 @@ from homeassistant.components.select import SelectEntity
 from homeassistant.exceptions import ServiceValidationError
 from .entity import FlickEntity
 from .permissions import async_require_management
+from .profile_options import profile_choices
 from .services import async_request
 
 
@@ -19,10 +20,7 @@ class ProfileSelect(FlickEntity, SelectEntity):
         super().__init__(device, "profile")
 
     def _choices(self):
-        profiles = self.device.status.get("profiles", [])
-        names = [profile["name"] for profile in profiles]
-        return {(profile["name"] if names.count(profile["name"]) == 1 else f"{profile['name']} ({profile['id']})"): profile["id"]
-                for profile in profiles}
+        return profile_choices(self.device.status.get("profiles", []))
 
     @property
     def options(self):
@@ -35,6 +33,7 @@ class ProfileSelect(FlickEntity, SelectEntity):
 
     async def async_select_option(self, option):
         await async_require_management(self.hass, self._context)
-        if option not in self._choices():
+        profile_id = self._choices().get(option)
+        if profile_id is None:
             raise ServiceValidationError("Choose one of this TV's profiles")
-        await async_request(self.device, "select_profile", {"id": self._choices()[option]})
+        await async_request(self.device, "select_profile", {"id": profile_id})

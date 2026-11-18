@@ -1,9 +1,19 @@
 import unittest
 
-from custom_components.flick_tv.profile_options import app_options
+from custom_components.flick.profile_options import app_options, profile_choices
 
 
 class ProfileAppOptionsTests(unittest.TestCase):
+    def test_generated_label_does_not_hide_a_profile_with_that_literal_name(self):
+        profiles = [
+            {"name": "Guest", "id": "one"},
+            {"name": "Guest", "id": "two"},
+            {"name": "Guest (one)", "id": "three"},
+        ]
+        choices = profile_choices(profiles)
+        self.assertEqual(["one", "two", "three"], list(choices.values()))
+        self.assertEqual("three", choices["Guest (one)"])
+
     def test_allowed_uninstalled_app_remains_a_selectable_choice(self):
         choices = app_options(
             [{"value": "app.installed", "label": "Installed app"}],

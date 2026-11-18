@@ -7,7 +7,7 @@ get_status:
       required: true
       selector:
         device:
-          integration: flick_tv
+          integration: flick
 list_apps:
   name: List apps
   description: List installed TV apps. Enable Launcher management on the TV first.
@@ -109,6 +109,17 @@ set_wallpapers:
       default: true
       selector:
         boolean:
+open_camera:
+  name: Open camera
+  description: Open a silent live camera on a TV with launcher management and overlay permission enabled, and an adult profile unlocked.
+  fields:
+    device_id: *tv
+    camera_entity_id:
+      name: Camera
+      required: true
+      selector:
+        entity:
+          domain: camera
 notify:
   name: Show notification
   description: Show a text or image card. Persistent cards offer Dismiss; action buttons emit a Flick notification event.
