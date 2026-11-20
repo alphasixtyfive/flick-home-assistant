@@ -2,21 +2,21 @@
   <img src="docs/assets/flick.svg" width="112" height="112" alt="Flick icon">
 </p>
 
-<h1 align="center">Flick for Home Assistant</h1>
+<h1 align="center">Flick TV for Home Assistant</h1>
 
-Connect the [Flick Android TV launcher](https://github.com/alphasixtyfive/flick) to
+Connect the [Flick TV launcher](https://github.com/alphasixtyfive/flick-tv) to
 Home Assistant. Each paired TV appears as a device with profile selection, wallpaper
 controls and notifications.
 
 Requires Home Assistant 2026.11 or later and Flick 0.2.31 or later.
 
-[Releases](https://github.com/alphasixtyfive/flick-home-assistant/releases) ·
-[Report an issue](https://github.com/alphasixtyfive/flick-home-assistant/issues)
+[Releases](https://github.com/alphasixtyfive/flick-tv-home-assistant/releases) ·
+[Report an issue](https://github.com/alphasixtyfive/flick-tv-home-assistant/issues)
 
 ## Install
 
-Download the source ZIP for the [latest release](https://github.com/alphasixtyfive/flick-home-assistant/releases/latest).
-Copy `custom_components/flick` into Home Assistant's `custom_components` directory, then restart Home Assistant. Add **Flick** from Settings → Devices & services.
+Download the source ZIP for the [latest release](https://github.com/alphasixtyfive/flick-tv-home-assistant/releases/latest).
+Copy `custom_components/flick` into Home Assistant's `custom_components` directory, then restart Home Assistant. Add **Flick TV** from Settings → Devices & services.
 
 In Flick, connect a dedicated non-admin Home Assistant account under Settings → Home
 Assistant. Open TV connection → Pair TV and enter its six-digit code in Home Assistant.
@@ -25,7 +25,8 @@ an administrator's Home Assistant session; the TV keeps its non-admin account.
 
 Flick's ordinary light controls work without this component.
 
-When upgrading from 0.1.11 or earlier, add Flick and pair your TVs again after updating the launcher.
+Upgrades from 0.1.12 keep existing pairings and `flick` automation actions.
+When upgrading from 0.1.11 or earlier, add Flick TV and pair your TVs again after updating the launcher.
 Change automation actions from `flick_tv.*` to `flick.*` and update any event triggers to use
 `flick_notification_action`. Remove the previous integration after verifying the new connection.
 
@@ -160,7 +161,7 @@ python -m unittest discover -s tests -v
 These tests run independently of Home Assistant. Integration loading, configuration
 flows, entity behavior and Android permissions also need testing on the supported
 Home Assistant and TV versions. See the launcher's
-[protocol documentation](https://github.com/alphasixtyfive/flick/blob/main/docs/home-assistant-protocol.md).
+[protocol documentation](https://github.com/alphasixtyfive/flick-tv/blob/main/docs/home-assistant-protocol.md).
 
 The square brand icon ships in `custom_components/flick/brand/` at 256px and 512px.
 Both PNGs use the vector source in `docs/assets/flick.svg`. Home Assistant loads them through its

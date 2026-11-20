@@ -1,6 +1,6 @@
 {
   "domain": "flick",
-  "name": "Flick",
+  "name": "Flick TV",
   "codeowners": [
     "@alphasixtyfive"
   ],
@@ -8,10 +8,10 @@
   "dependencies": [
     "websocket_api"
   ],
-  "documentation": "https://github.com/alphasixtyfive/flick/blob/main/SETUP.md#home-assistant",
+  "documentation": "https://github.com/alphasixtyfive/flick-tv/blob/main/SETUP.md#home-assistant",
   "integration_type": "device",
   "iot_class": "local_push",
-  "issue_tracker": "https://github.com/alphasixtyfive/flick-home-assistant/issues",
+  "issue_tracker": "https://github.com/alphasixtyfive/flick-tv-home-assistant/issues",
   "requirements": [],
-  "version": "0.1.12"
+  "version": "0.1.13"
 }
