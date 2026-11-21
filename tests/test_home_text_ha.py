@@ -12,8 +12,8 @@ from types import ModuleType, SimpleNamespace
 import unittest
 from unittest.mock import AsyncMock, patch
 
-from custom_components.flick.const import DOMAIN
-from custom_components.flick.session import Registry
+from custom_components.flick_tv.const import DOMAIN
+from custom_components.flick_tv.session import Registry
 
 
 class TemplateError(Exception):
@@ -109,7 +109,7 @@ def callback(function):
 
 
 def load(name, filename):
-    path = Path(__file__).parents[1] / "custom_components" / "flick" / filename
+    path = Path(__file__).parents[1] / "custom_components" / "flick_tv" / filename
     spec = importlib.util.spec_from_file_location(name, path)
     result = importlib.util.module_from_spec(spec)
     sys.modules[name] = result
@@ -145,9 +145,9 @@ def adapters():
         "homeassistant.components": module(websocket_api=websocket_api),
     }
     with patch.dict(sys.modules, doubles):
-        renderer = load("custom_components.flick.home_text_template", "home_text_template.py")
-        flow = load("custom_components.flick.config_flow", "config_flow.py")
-        socket = load("custom_components.flick.websocket", "websocket.py")
+        renderer = load("custom_components.flick_tv.home_text_template", "home_text_template.py")
+        flow = load("custom_components.flick_tv.config_flow", "config_flow.py")
+        socket = load("custom_components.flick_tv.websocket", "websocket.py")
         yield renderer, flow, socket
 
 
@@ -260,7 +260,7 @@ class OptionsFlowTests(unittest.IsolatedAsyncioTestCase):
     async def test_denied_theme_update_stays_in_form_and_does_not_save_options(self):
         with adapters() as (_, flow_module, _):
             flow, device, _ = self.theme_flow(flow_module)
-            from custom_components.flick.session import DeviceRejected
+            from custom_components.flick_tv.session import DeviceRejected
             device.request.side_effect = [
                 {"selected": "midnight", "themes": [{"id": "midnight", "name": "Midnight"},
                                                      {"id": "warm", "name": "Warm"}]},
@@ -307,7 +307,7 @@ class OptionsFlowTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual("existing", existing["home_text"]["template"])
 
     async def test_every_options_menu_item_has_a_published_label(self):
-        component = Path(__file__).parents[1] / "custom_components" / "flick"
+        component = Path(__file__).parents[1] / "custom_components" / "flick_tv"
         source = json.loads((component / "strings.json").read_text(encoding="utf-8"))
         published = json.loads((component / "translations" / "en.json").read_text(encoding="utf-8"))
         with adapters() as (_, flow_module, _):
@@ -398,7 +398,7 @@ class WebSocketTests(unittest.TestCase):
             return value
 
         self.device.home_text = SimpleNamespace(subscribe=subscribe)
-        self.message = {"id": 2, "type": "flick/home_text", "device_id": "tv-1",
+        self.message = {"id": 2, "type": "flick_tv/home_text", "device_id": "tv-1",
                         "device_secret": "a" * 64, "profile_id": "adult", "profile_generation": 4}
 
     def test_optional_subscription_keeps_command_channel_separate(self):
@@ -423,7 +423,7 @@ class WebSocketTests(unittest.TestCase):
             other = SimpleNamespace(**{**vars(self.connection), "subscriptions": {}})
             other.send_result = lambda message_id, result=None: self.results.append(message_id)
             try:
-                socket.ws_connect(self.hass, other, {"id": 1, "type": "flick/connect",
+                socket.ws_connect(self.hass, other, {"id": 1, "type": "flick_tv/connect",
                     "device_id": "tv-1", "device_secret": "a" * 64,
                     "name": "Test TV", "protocol": 1})
             finally:
@@ -467,7 +467,7 @@ class EntryLifecycleTests(unittest.IsolatedAsyncioTestCase):
             async_unload_platforms=AsyncMock(return_value=True)))
         return hass, entry
     async def test_failed_platform_setup_closes_home_text_manager(self):
-        from custom_components.flick import async_setup_entry
+        from custom_components.flick_tv import async_setup_entry
 
         with adapters():
             hass, entry = self.entry_setup({})
@@ -478,7 +478,7 @@ class EntryLifecycleTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(set(), entry.runtime_data._listeners)
 
     async def test_cancelled_platform_setup_unregisters_the_device(self):
-        from custom_components.flick import async_setup_entry
+        from custom_components.flick_tv import async_setup_entry
 
         with adapters():
             hass, entry = self.entry_setup({})
@@ -489,7 +489,7 @@ class EntryLifecycleTests(unittest.IsolatedAsyncioTestCase):
             self.assertNotIn(entry.data["device_id"], hass.data[DOMAIN].devices)
 
     async def test_options_update_during_setup_or_unload_has_no_manager_to_configure(self):
-        from custom_components.flick import async_options_updated
+        from custom_components.flick_tv import async_options_updated
 
         await async_options_updated(None, SimpleNamespace(options={}))
         await async_options_updated(None, SimpleNamespace(

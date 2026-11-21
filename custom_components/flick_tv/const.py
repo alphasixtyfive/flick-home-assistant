@@ -1,6 +1,6 @@
 """Flick's integration and wire-protocol limits."""
 
-DOMAIN = "flick"
+DOMAIN = "flick_tv"
 PROTOCOL = 1
 COMMAND_TIMEOUT = 10
 PAIRING_TTL = 300

@@ -1,6 +1,6 @@
 from types import SimpleNamespace
 import unittest
-from custom_components.flick.permissions import management_allowed
+from custom_components.flick_tv.permissions import management_allowed
 
 
 class PermissionTests(unittest.TestCase):

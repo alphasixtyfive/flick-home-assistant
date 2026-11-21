@@ -29,7 +29,7 @@ def async_register_commands(hass):
 
 
 @websocket_api.websocket_command({
-    schema.Required("type"): "flick/connect",
+    schema.Required("type"): "flick_tv/connect",
     schema.Required("device_id"): str,
     schema.Required("device_secret"): str,
     schema.Required("name"): str,
@@ -61,7 +61,7 @@ _AUTH = {schema.Required("device_id"): str, schema.Required("device_secret"): st
 
 
 @websocket_api.websocket_command({
-    schema.Required("type"): "flick/home_text", **_AUTH,
+    schema.Required("type"): "flick_tv/home_text", **_AUTH,
     schema.Required("profile_id"): str,
     schema.Required("profile_generation"): schema.All(int, schema.Range(min=0, max=MAX_GENERATION)),
 })
@@ -82,7 +82,7 @@ def ws_home_text(hass, connection, message):
 
 
 @websocket_api.websocket_command({
-    schema.Required("type"): "flick/result", **_AUTH,
+    schema.Required("type"): "flick_tv/result", **_AUTH,
     schema.Required("request_id"): str, schema.Required("success"): bool,
     schema.Optional("data", default={}): dict, schema.Optional("error"): str,
 })
@@ -98,7 +98,7 @@ def ws_result(hass, connection, message):
 
 
 @websocket_api.websocket_command({
-    schema.Required("type"): "flick/status", **_AUTH,
+    schema.Required("type"): "flick_tv/status", **_AUTH,
     schema.Required("version"): str, schema.Required("profile"): dict,
     schema.Required("profiles"): list, schema.Required("capabilities"): list,
     schema.Optional("current_app"): schema.Any(str, None),
@@ -114,14 +114,14 @@ def ws_status(hass, connection, message):
 
 
 @websocket_api.websocket_command({
-    schema.Required("type"): "flick/notification_action", **_AUTH,
+    schema.Required("type"): "flick_tv/notification_action", **_AUTH,
     schema.Required("notification_id"): str, schema.Required("action_id"): str,
 })
 @callback
 def ws_notification_action(hass, connection, message):
     try:
         data = _device(hass, connection, message).notification_action(message["notification_id"], message["action_id"])
-        hass.bus.async_fire("flick_notification_action", data)
+        hass.bus.async_fire("flick_tv_notification_action", data)
         connection.send_result(message["id"])
     except InvalidPayload:
         connection.send_error(message["id"], "invalid_action", "This notification action is not available")

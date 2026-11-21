@@ -3,8 +3,8 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from custom_components.flick.protocol import InvalidPayload
-from custom_components.flick.session import DeviceRejected, DeviceUnavailable, Registry
+from custom_components.flick_tv.protocol import InvalidPayload
+from custom_components.flick_tv.session import DeviceRejected, DeviceUnavailable, Registry
 
 
 def connect_data(device_id="tv-1", *, code="123456", secret="a" * 64):
@@ -233,7 +233,7 @@ class SessionTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_zero_timeout_actions_expire_like_the_default_notification(self):
         clock = [100.0]
-        with patch("custom_components.flick.session.time", SimpleNamespace(monotonic=lambda: clock[0])):
+        with patch("custom_components.flick_tv.session.time", SimpleNamespace(monotonic=lambda: clock[0])):
             for timeout in (0, 8):
                 notification_id = f"notice-{timeout}"
                 task = asyncio.create_task(self.device.request("notify", {
@@ -250,7 +250,7 @@ class SessionTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_persistent_actions_remain_available_after_the_default_timeout(self):
         clock = [100.0]
-        with patch("custom_components.flick.session.time", SimpleNamespace(monotonic=lambda: clock[0])):
+        with patch("custom_components.flick_tv.session.time", SimpleNamespace(monotonic=lambda: clock[0])):
             task = asyncio.create_task(self.device.request("notify", {
                 "id": "persistent", "message": "Hi", "persistent": True, "timeout": 0,
                 "actions": [{"id": "view", "label": "View"}],

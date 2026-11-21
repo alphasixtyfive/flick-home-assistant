@@ -8,7 +8,7 @@ Connect the [Flick TV launcher](https://github.com/alphasixtyfive/flick-tv) to
 Home Assistant. Each paired TV appears as a device with profile selection, wallpaper
 controls and notifications.
 
-Requires Home Assistant 2026.11 or later and Flick 0.2.31 or later.
+Requires Home Assistant 2026.11 or later and Flick TV 0.2.33 or later.
 
 [Releases](https://github.com/alphasixtyfive/flick-tv-home-assistant/releases) ·
 [Report an issue](https://github.com/alphasixtyfive/flick-tv-home-assistant/issues)
@@ -16,7 +16,7 @@ Requires Home Assistant 2026.11 or later and Flick 0.2.31 or later.
 ## Install
 
 Download the source ZIP for the [latest release](https://github.com/alphasixtyfive/flick-tv-home-assistant/releases/latest).
-Copy `custom_components/flick` into Home Assistant's `custom_components` directory, then restart Home Assistant. Add **Flick TV** from Settings → Devices & services.
+Copy `custom_components/flick_tv` into Home Assistant's `custom_components` directory, then restart Home Assistant. Add **Flick TV** from Settings → Devices & services.
 
 In Flick, connect a dedicated non-admin Home Assistant account under Settings → Home
 Assistant. Open TV connection → Pair TV and enter its six-digit code in Home Assistant.
@@ -25,10 +25,12 @@ an administrator's Home Assistant session; the TV keeps its non-admin account.
 
 Flick's ordinary light controls work without this component.
 
-Upgrades from 0.1.12 keep existing pairings and `flick` automation actions.
-When upgrading from 0.1.11 or earlier, add Flick TV and pair your TVs again after updating the launcher.
-Change automation actions from `flick_tv.*` to `flick.*` and update any event triggers to use
-`flick_notification_action`. Remove the previous integration after verifying the new connection.
+### Moving from the `flick` integration
+
+1. Keep the previous integration until its TVs have moved. Install this release under `custom_components/flick_tv` and restart Home Assistant.
+2. [Move each launcher to Flick TV 0.2.33](https://github.com/alphasixtyfive/flick-tv/blob/main/SETUP.md#moving-from-flick-0232-or-earlier), then [open setup for the new domain](https://my.home-assistant.io/redirect/config_flow_start/?domain=flick_tv) and pair the TV.
+3. Copy any per-TV options and update automation actions from `flick.*` to `flick_tv.*`. Update event triggers to `flick_tv_notification_action` and retarget automations and dashboards to the newly paired devices and entities.
+4. After verifying the new devices and automations, remove the old entries and the `custom_components/flick` folder.
 
 ## Controls
 
@@ -37,7 +39,7 @@ selector, Next wallpaper button and notification entity.
 Device options group Home screen text, Slideshow and Profiles. Open Configure → Profiles
 to add or edit a profile, change a parent PIN, manage a child's allowed apps or delete a profile.
 Online photo collections can be replaced or extended with
-`flick.set_wallpapers`.
+`flick_tv.set_wallpapers`.
 
 On TVs that support themes, **Configure → Theme** lists the presets and imported themes
 currently available on that TV. Select a theme to apply it immediately. Import theme files
@@ -50,12 +52,12 @@ at the startup picker or while a child profile is active. A child's app list doe
 streaming app; configure child accounts there as well.
 
 For brief text notifications, use `notify.send_message` with the TV's notification
-entity. The `flick.notify` action also accepts an image URL or camera, up to two named actions,
+entity. The `flick_tv.notify` action also accepts an image URL or camera, up to two named actions,
 a timeout and a persistent flag. Action buttons require an unlocked adult profile;
 text and image notifications can still appear while the launcher is locked. Persistent
 cards offer Dismiss and support Back.
 Images require direct HTTP(S) links without credentials. Notification buttons emit
-`flick_notification_action` with the device, notification and action IDs; automations
+`flick_tv_notification_action` with the device, notification and action IDs; automations
 decide what those IDs mean. The TV cannot choose an arbitrary Home Assistant service.
 
 Notifications over other apps require Android's Display over other apps permission.
@@ -124,7 +126,7 @@ data:
 To include an existing Home Assistant camera image:
 
 ```yaml
-action: flick.notify
+action: flick_tv.notify
 data:
   device_id: YOUR_FLICK_DEVICE_ID
   title: Camera preview
@@ -163,12 +165,12 @@ flows, entity behavior and Android permissions also need testing on the supporte
 Home Assistant and TV versions. See the launcher's
 [protocol documentation](https://github.com/alphasixtyfive/flick-tv/blob/main/docs/home-assistant-protocol.md).
 
-The square brand icon ships in `custom_components/flick/brand/` at 256px and 512px.
+The square brand icon ships in `custom_components/flick_tv/brand/` at 256px and 512px.
 Both PNGs use the vector source in `docs/assets/flick.svg`. Home Assistant loads them through its
 [native branding support](https://contributors.home-assistant.io/core/integrations/brands/); no dashboard resource is needed.
 
 ## Releases
 
-Set the version in `custom_components/flick/manifest.json` and publish a matching
+Set the version in `custom_components/flick_tv/manifest.json` and publish a matching
 `v<version>` tag and GitHub release. List any changes to the supported Home Assistant
 or Flick versions in the release notes. Keep older releases and tags available.

@@ -1,6 +1,6 @@
 import unittest
 
-from custom_components.flick.profile_options import app_options, profile_choices
+from custom_components.flick_tv.profile_options import app_options, profile_choices
 
 
 class ProfileAppOptionsTests(unittest.TestCase):

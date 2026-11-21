@@ -2,10 +2,10 @@ import heapq
 from types import SimpleNamespace
 import unittest
 
-from custom_components.flick.home_text import (
+from custom_components.flick_tv.home_text import (
     HomeText, HomeTextOptions, home_text_options, rendered_text,
 )
-from custom_components.flick.protocol import InvalidPayload
+from custom_components.flick_tv.protocol import InvalidPayload
 
 
 class Timer:
